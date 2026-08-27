@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { AlertTriangle, Check, Pause, Play, Zap } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, pct } from '@/lib/utils'
 
 /** Fraction of the timeline where BitChord hands Opus off to FLAC. */
 const HANDOFF = 0.42
@@ -106,7 +106,7 @@ export function PipelineVisualizer() {
         marker={
           <div
             className="absolute inset-y-0 flex items-center justify-center border-x border-dashed border-amber-400/40 bg-amber-400/[0.07]"
-            style={{ left: `${STALL_START * 100}%`, width: `${(STALL_END - STALL_START) * 100}%` }}
+            style={{ left: pct(STALL_START), width: pct(STALL_END - STALL_START) }}
           >
             <span className="whitespace-nowrap font-mono text-[8.5px] uppercase tracking-wider text-amber-200/90">
               re-buffer
@@ -157,7 +157,7 @@ export function PipelineVisualizer() {
         marker={
           <div
             className="absolute inset-y-0 flex items-center"
-            style={{ left: `${HANDOFF * 100}%` }}
+            style={{ left: pct(HANDOFF) }}
           >
             <span className="absolute inset-y-0 w-px bg-gradient-to-b from-transparent via-cyan-300 to-transparent" />
             <span className="absolute -top-1 left-1.5 whitespace-nowrap rounded bg-cyan-400/15 px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-wider text-cyan-200">
@@ -238,7 +238,7 @@ function Lane({
               ? 'bg-gradient-to-r from-violet-500/10 to-cyan-400/10'
               : 'bg-amber-400/[0.06]',
           )}
-          style={{ width: `${progress * 100}%` }}
+          style={{ width: pct(progress) }}
         />
 
         {marker}
@@ -268,7 +268,7 @@ function Lane({
         {/* Playhead */}
         <div
           className="absolute inset-y-0 w-px bg-white/70 shadow-[0_0_10px_2px_rgba(255,255,255,0.35)]"
-          style={{ left: `${progress * 100}%` }}
+          style={{ left: pct(progress) }}
         >
           <span className="absolute -top-px left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-white" />
         </div>

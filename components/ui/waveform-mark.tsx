@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn, pct, secs } from '@/lib/utils'
 
 /**
  * Animated waveform logo mark.
@@ -38,8 +38,8 @@ export function WaveformMark({
               animate && 'animate-waveform',
             )}
             style={{
-              height: `${h * 100}%`,
-              animationDelay: `${i * 0.13}s`,
+              height: pct(h),
+              animationDelay: secs(i * 0.13, 2),
             }}
           />
         ))}

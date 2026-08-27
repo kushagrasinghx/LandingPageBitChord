@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Check, Download, FileMusic, HardDrive, Image, Tag } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, pct } from '@/lib/utils'
 
 const QUEUE = [
   { title: 'Midnight Wire', size: '38.2 MB', codec: 'FLAC' },
@@ -42,8 +42,8 @@ export function OfflineCard() {
       {/* Download queue */}
       <div className="flex flex-col gap-1.5">
         {QUEUE.map((track, i) => {
-          const pct = rowProgress(i)
-          const done = pct >= 100
+          const filled = rowProgress(i)
+          const done = filled >= 100
           return (
             <div
               key={track.title}
@@ -81,7 +81,7 @@ export function OfflineCard() {
                       ? 'bg-emerald-400/80'
                       : 'bg-gradient-to-r from-violet-400 to-cyan-300',
                   )}
-                  style={{ width: `${pct}%` }}
+                  style={{ width: pct(filled / 100) }}
                 />
               </div>
             </div>

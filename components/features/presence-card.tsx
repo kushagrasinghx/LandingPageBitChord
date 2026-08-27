@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Check, RefreshCw } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, pct, secs } from '@/lib/utils'
 
 const SERVICES = [
   { name: 'Last.fm', detail: 'scrobbled', accent: 'text-rose-300', dot: 'bg-rose-400' },
@@ -54,7 +54,7 @@ export function PresenceCard() {
                       'w-[1.5px] origin-bottom rounded-full bg-white',
                       !reduced && 'animate-waveform',
                     )}
-                    style={{ height: `${h * 100}%`, animationDelay: `${i * 0.15}s` }}
+                    style={{ height: pct(h), animationDelay: secs(i * 0.15, 2) }}
                   />
                 ))}
               </span>
@@ -71,7 +71,7 @@ export function PresenceCard() {
               <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/12">
                 <div
                   className="h-full rounded-full bg-white/70 transition-[width] duration-1000 ease-linear"
-                  style={{ width: `${(elapsed / 600) * 100}%` }}
+                  style={{ width: pct(elapsed / 600) }}
                 />
               </div>
               <span className="font-mono text-[9px] tabular-nums text-white/45">

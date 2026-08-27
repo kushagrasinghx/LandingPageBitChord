@@ -3,8 +3,13 @@
 import { useId, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, Disc3 } from 'lucide-react'
+import { pct } from '@/lib/utils'
 
-/** Deterministic pseudo-waveform — no Math.random, so SSR and client agree. */
+/**
+ * Deterministic pseudo-waveform — no Math.random, so SSR and client agree.
+ * Determinism alone isn't enough, though: these are long floats, so every value
+ * goes through `pct()` before it reaches an inline style. See `lib/utils.ts`.
+ */
 function waveform(seed: number, count = 42) {
   return Array.from({ length: count }, (_, i) => {
     const a = Math.sin(i * 0.55 + seed) * 0.5 + 0.5
@@ -65,13 +70,13 @@ export function AutomixCard() {
         {/* Outgoing track, anchored left. */}
         <div
           className="absolute inset-y-0 left-0 flex items-center gap-[2px] px-2"
-          style={{ width: `${(0.5 + overlap / 2) * 100}%` }}
+          style={{ width: pct(0.5 + overlap / 2) }}
         >
           {OUTGOING.map((h, i) => (
             <span
               key={i}
               className="flex-1 rounded-full bg-gradient-to-t from-violet-500/40 to-violet-300/85"
-              style={{ height: `${h * 66}%` }}
+              style={{ height: pct(h * 0.66) }}
             />
           ))}
         </div>
@@ -79,13 +84,13 @@ export function AutomixCard() {
         {/* Incoming track, anchored right, mirrored downward. */}
         <div
           className="absolute inset-y-0 right-0 flex items-end justify-end gap-[2px] px-2 pb-2"
-          style={{ width: `${(0.5 + overlap / 2) * 100}%` }}
+          style={{ width: pct(0.5 + overlap / 2) }}
         >
           {INCOMING.map((h, i) => (
             <span
               key={i}
               className="flex-1 rounded-full bg-gradient-to-t from-cyan-300/85 to-cyan-500/40"
-              style={{ height: `${h * 52}%` }}
+              style={{ height: pct(h * 0.52) }}
             />
           ))}
         </div>
@@ -94,8 +99,8 @@ export function AutomixCard() {
         <motion.div
           className="absolute inset-y-0 border-x border-dashed border-white/25 bg-white/[0.05] backdrop-blur-[1px]"
           animate={{
-            left: `${(0.5 - overlap / 2) * 100}%`,
-            width: `${overlap * 100}%`,
+            left: pct(0.5 - overlap / 2),
+            width: pct(overlap),
           }}
           transition={{ type: 'spring', stiffness: 220, damping: 26 }}
         >
@@ -137,9 +142,9 @@ export function AutomixCard() {
           aria-valuetext={`${seconds} seconds`}
           className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(124,58,237,0.35)] [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white"
           style={{
-            background: `linear-gradient(to right, rgb(124 58 237 / 0.85) 0%, rgb(6 182 212 / 0.85) ${
-              (seconds / 12) * 100
-            }%, rgb(255 255 255 / 0.1) ${(seconds / 12) * 100}%)`,
+            background: `linear-gradient(to right, rgb(124 58 237 / 0.85) 0%, rgb(6 182 212 / 0.85) ${pct(
+              seconds / 12,
+            )}, rgb(255 255 255 / 0.1) ${pct(seconds / 12)})`,
           }}
         />
 

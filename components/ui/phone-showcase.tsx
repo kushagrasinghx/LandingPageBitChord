@@ -20,7 +20,7 @@ import {
   Sparkles,
   Waves,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, pct, secs } from '@/lib/utils'
 
 /**
  * Demo track for the mockup. Lyrics are split per word with a duration in ms so
@@ -240,8 +240,8 @@ export function PhoneShowcase({ className }: { className?: string }) {
                           !reduced && 'animate-waveform',
                         )}
                         style={{
-                          height: `${h * 100}%`,
-                          animationDelay: `${(i % 9) * 0.11}s`,
+                          height: pct(h),
+                          animationDelay: secs((i % 9) * 0.11, 2),
                         }}
                       />
                     ))}
@@ -315,7 +315,7 @@ export function PhoneShowcase({ className }: { className?: string }) {
                 <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-white/12">
                   <motion.div
                     className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-violet-400 via-cyan-300 to-cyan-200"
-                    style={{ width: `${progress * 100}%` }}
+                    style={{ width: pct(progress) }}
                   />
                 </div>
                 <div className="mt-1.5 flex justify-between font-mono text-[8.5px] tabular-nums text-white/40">
