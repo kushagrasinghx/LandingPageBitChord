@@ -5,34 +5,32 @@ import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 /**
- * Frosted-glass panel with a dynamic specular highlight that tracks the pointer.
+ * Elevated panel with a dynamic specular highlight that tracks the pointer.
  *
  * Two stacked layers do the work: a soft radial wash inside the card, and a
  * border-mask layer that lights only the 1px hairline edge nearest the cursor.
- * The second is what makes the border read as a physical glass lip rather than a
- * flat stroke.
+ * The second is what makes the border read as a physical lip rather than a flat
+ * stroke.
+ *
+ * There is deliberately no per-card accent tint any more. The old `accent` prop
+ * existed to keep a grid of cards from reading as monochrome; monochrome is now
+ * the point, and the pointer wash carries the interaction on luminance alone.
  */
 export function GlassCard({
   children,
   className,
-  /** Tint of the specular wash — pick per card so the grid isn't monochrome. */
-  accent = 'violet',
   interactive = true,
 }: {
   children: ReactNode
   className?: string
-  accent?: 'violet' | 'cyan' | 'magenta'
   interactive?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const x = useMotionValue(-400)
   const y = useMotionValue(-400)
 
-  const rgb =
-    accent === 'cyan' ? '6,182,212' : accent === 'magenta' ? '236,72,153' : '124,58,237'
-
-  const wash = useMotionTemplate`radial-gradient(420px circle at ${x}px ${y}px, rgba(${rgb},0.14), transparent 65%)`
-  const edge = useMotionTemplate`radial-gradient(320px circle at ${x}px ${y}px, rgba(255,255,255,0.42), transparent 70%)`
+  const wash = useMotionTemplate`radial-gradient(420px circle at ${x}px ${y}px, rgba(255,255,255,0.07), transparent 65%)`
+  const edge = useMotionTemplate`radial-gradient(320px circle at ${x}px ${y}px, rgba(255,255,255,0.45), transparent 70%)`
 
   function onMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!interactive) return

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
-import { REPO_URL } from '@/lib/github'
+import { SITE_URL } from '@/lib/site'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -17,55 +17,81 @@ const jetbrains = JetBrains_Mono({
   weight: ['400', '500', '600'],
 })
 
-const TITLE = 'BitChord — Instant Stream. Seamless Lossless. No Compromise.'
+const TITLE = 'BitChord — Instant Stream. No Compromise.'
 const DESCRIPTION =
-  'The open-source YouTube Music client that starts playback instantly, then promotes your track to Hi-Res FLAC mid-playback without a single hitch. Beat-matched Automix, word-synced lyrics, Discord Rich Presence. Free, GPLv3, no ads, no tracking.'
+  'The open-source YouTube Music client for Android. Beat-matched Automix, character-synced lyrics, Discord Rich Presence and a monthly Replay of everything you played. Free, GPLv3, no ads, no tracking.'
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // Resolves every relative URL below — and the generated OG image — against
+  // the deployed origin. Without it Next emits relative social tags, which
+  // crawlers cannot follow.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: TITLE,
+    // Any future route gets the brand appended rather than restating it.
+    template: '%s · BitChord',
+  },
   description: DESCRIPTION,
   applicationName: 'BitChord',
+  category: 'music',
   keywords: [
     'BitChord',
     'YouTube Music client',
-    'FLAC',
-    'lossless audio',
     'Android music player',
-    'open source',
+    'open source music player',
     'Automix',
     'synced lyrics',
+    'Replay',
     'Discord Rich Presence',
+    'Last.fm scrobbler',
+    'APK download',
   ],
   authors: [{ name: 'kushagrasinghx', url: 'https://github.com/kushagrasinghx' }],
+  creator: 'kushagrasinghx',
+  publisher: 'kushagrasinghx',
+  // One page, one canonical. Stops preview deployments and any ?query variant
+  // from competing with production in the index.
+  alternates: { canonical: '/' },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    url: REPO_URL,
+    // The site itself, not the repository — this is what gets crawled and
+    // unfurled, and pointing it at GitHub handed the link equity away.
+    url: '/',
     siteName: 'BitChord',
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
+    creator: '@kushagrasinghx',
   },
   icons: {
-    // Inline SVG favicon: a waveform mark, no binary asset to ship.
-    icon: [
-      {
-        url:
-          'data:image/svg+xml,' +
-          encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#7C3AED"/><stop offset=".5" stop-color="#06B6D4"/><stop offset="1" stop-color="#EC4899"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="#070709"/><g fill="url(#g)"><rect x="6" y="13" width="3" height="6" rx="1.5"/><rect x="11.5" y="9" width="3" height="14" rx="1.5"/><rect x="17" y="6" width="3" height="20" rx="1.5"/><rect x="22.5" y="11" width="3" height="10" rx="1.5"/></g></svg>`,
-          ),
-        type: 'image/svg+xml',
-      },
-    ],
+    // `public/LogoTransparent.png` is misnamed — its bytes are an SVG, not a
+    // PNG. Serving it as `image/png` is why no favicon rendered at all:
+    // browsers trust the declared type and fail to decode. `favicon.svg` is
+    // that same artwork under the right extension, plus a media query that
+    // flips the white mark to black on a light tab strip so it stays visible
+    // without giving it an opaque plate.
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#070709',
+  themeColor: '#000000',
   colorScheme: 'dark',
 }
 

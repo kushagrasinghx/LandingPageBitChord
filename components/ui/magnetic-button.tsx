@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 type Variant = 'primary' | 'secondary' | 'ghost'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-white text-[#0a0a0f] font-semibold',
+  primary: 'bg-fg text-canvas font-semibold',
   secondary: 'glass text-white/85 hover:text-white hover:bg-white/[0.07]',
   ghost: 'text-white/60 hover:text-white hover:bg-white/[0.05]',
 }
@@ -31,11 +31,11 @@ type MagneticButtonProps = {
  *  1. A magnetic lean — the whole control springs a few px toward the pointer.
  *  2. A radial highlight tracking the pointer across the surface, for the
  *     specular "light catching glass" read.
- *  3. A rotating conic bloom behind the primary variant.
+ *  3. A soft halo behind the primary variant that tightens on hover.
  *
- * The bloom lives on an outer wrapper rather than inside the button, because the
+ * The halo lives on an outer wrapper rather than inside the button, because the
  * button itself must clip its highlight (`overflow-hidden`) and would otherwise
- * clip the bloom too. The wrapper also carries the magnet transform so bloom and
+ * clip the halo too. The wrapper also carries the magnet transform so halo and
  * button move as one object.
  *
  * Renders as `<a>` when `href` is set and `<button>` otherwise, so keyboard and
@@ -64,7 +64,7 @@ export function MagneticButton({
   const px = useMotionValue(-200)
   const py = useMotionValue(-200)
   const highlight = useMotionTemplate`radial-gradient(150px circle at ${px}px ${py}px, ${
-    variant === 'primary' ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.14)'
+    variant === 'primary' ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.14)'
   }, transparent 70%)`
 
   function handleMove(e: React.PointerEvent<HTMLSpanElement>) {
@@ -96,7 +96,7 @@ export function MagneticButton({
   const surface = cn(
     'group/btn relative z-10 inline-flex items-center justify-center gap-2 overflow-hidden rounded-full',
     'px-6 py-3 text-sm transition-colors duration-300 select-none w-full h-full',
-    'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-400/70',
+    'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80',
     VARIANTS[variant],
     className,
   )
@@ -141,34 +141,17 @@ export function MagneticButton({
       onPointerLeave={handleLeave}
       whileTap={reduced ? undefined : { scale: 0.965 }}
     >
-      {/* Ambient bloom behind the primary CTA. */}
+      {/* Ambient halo behind the primary CTA — pure luminance, no hue. */}
       {variant === 'primary' ? (
-        <>
-          <span
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute -inset-[6px] rounded-full blur-lg transition-opacity duration-500',
-              // Driven by state, not `group-hover:`: the pointer handlers live on
-              // this wrapper, and there is no `group` ancestor to hover.
-              hovered ? 'opacity-100' : 'opacity-60',
-            )}
-            style={{ background: 'linear-gradient(90deg, #7c3aed, #06b6d4, #ec4899)' }}
-          />
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute -inset-[2px] rounded-full opacity-0 blur-[3px] transition-opacity duration-500"
-            style={{
-              background: 'conic-gradient(from 0deg, #7c3aed, #06b6d4, #ec4899, #7c3aed)',
-              opacity: hovered ? 1 : 0,
-            }}
-            animate={hovered && !reduced ? { rotate: 360 } : { rotate: 0 }}
-            transition={{
-              duration: 3.5,
-              repeat: hovered && !reduced ? Infinity : 0,
-              ease: 'linear',
-            }}
-          />
-        </>
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute -inset-[7px] rounded-full bg-white blur-lg transition-opacity duration-500',
+            // Driven by state, not `group-hover:`: the pointer handlers live on
+            // this wrapper, and there is no `group` ancestor to hover.
+            hovered ? 'opacity-30' : 'opacity-[0.14]',
+          )}
+        />
       ) : null}
       {control}
     </motion.span>

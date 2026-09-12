@@ -1,13 +1,13 @@
 'use client'
 
-import { AudioLines, Cast, CloudDownload, Mic2, Waves } from 'lucide-react'
+import { AudioLines, Cast, CalendarClock, Mic2, Waves } from 'lucide-react'
 import { GlassCard } from '@/components/ui/glass-card'
 import { RevealGroup, RevealItem, SectionHeading } from '@/components/ui/reveal'
 import { PipelineVisualizer } from '@/components/features/pipeline-visualizer'
 import { LyricsCard } from '@/components/features/lyrics-card'
 import { AutomixCard } from '@/components/features/automix-card'
 import { PresenceCard } from '@/components/features/presence-card'
-import { OfflineCard } from '@/components/features/offline-card'
+import { ReplayCard } from '@/components/features/replay-card'
 import { cn } from '@/lib/utils'
 
 export function Features() {
@@ -30,8 +30,8 @@ export function Features() {
           <RevealItem className="lg:col-span-6">
             <FeatureCard
               id="audio-engine"
-              accent="cyan"
-              icon={<AudioLines className="size-4 text-cyan-300" aria-hidden />}
+              sideBySide
+              icon={<AudioLines className="size-4 text-white/70" aria-hidden />}
               kicker="Auto-upgrade pipeline"
               title="Start instantly. Land on lossless."
               body="Playback opens on whichever stream resolves fastest, then a background fetch promotes the track to FLAC/ALAC from your configured source and swaps it in-place. Separate quality ceilings for Wi-Fi and mobile data mean it never fights your data plan."
@@ -44,11 +44,10 @@ export function Features() {
           {/* Card 2 */}
           <RevealItem className="lg:col-span-3">
             <FeatureCard
-              accent="violet"
-              icon={<Mic2 className="size-4 text-violet-300" aria-hidden />}
+              icon={<Mic2 className="size-4 text-white/70" aria-hidden />}
               kicker="Word-synced lyrics"
               title="Karaoke-grade timing"
-              body="Word and syllable-level highlighting pulled from four providers, with a translation track and adjustable type. Tap any line to seek straight to it."
+              body="Character-level highlighting pulled from four providers — the sweep creeps across a held note instead of snapping word to word, and held words bloom as they are carried. Optional translation track; tap any line to seek straight to it."
             >
               <LyricsCard />
             </FeatureCard>
@@ -57,8 +56,7 @@ export function Features() {
           {/* Card 3 */}
           <RevealItem className="lg:col-span-3">
             <FeatureCard
-              accent="magenta"
-              icon={<Waves className="size-4 text-pink-300" aria-hidden />}
+              icon={<Waves className="size-4 text-white/70" aria-hidden />}
               kicker="Automix [Beta]"
               title="A DJ, not a fader"
               body="An on-device analyzer reads tempo, beat grid, key and vocal activity, then beat-matches and phrase-aligns the transition — falling back to equal-power crossfade when a track won't mix cleanly."
@@ -70,8 +68,7 @@ export function Features() {
           {/* Card 4 */}
           <RevealItem className="lg:col-span-3">
             <FeatureCard
-              accent="violet"
-              icon={<Cast className="size-4 text-violet-300" aria-hidden />}
+              icon={<Cast className="size-4 text-white/70" aria-hidden />}
               kicker="Ecosystem sync"
               title="Your taste, everywhere"
               body="In-app Discord login with live track, artist, album and progress — plus configurable status, activity type and two custom buttons. Scrobbles to Last.fm and ListenBrainz as you listen."
@@ -83,13 +80,12 @@ export function Features() {
           {/* Card 5 */}
           <RevealItem className="lg:col-span-3">
             <FeatureCard
-              accent="cyan"
-              icon={<CloudDownload className="size-4 text-cyan-300" aria-hidden />}
-              kicker="Offline library"
-              title="Keep the good stuff"
-              body="Downloads land in Music/BitChord with lyrics, Hi-Res cover art and full metadata written into the file — then merge into a local library that also scans whatever's already on your device."
+              icon={<CalendarClock className="size-4 text-white/70" aria-hidden />}
+              kicker="Replay"
+              title="Your month, counted"
+              body="Every play is tallied on-device into a monthly recap — top songs, artists, albums and genres, with the minutes behind each one. Swipe it as a story or export the poster and share it."
             >
-              <OfflineCard />
+              <ReplayCard />
             </FeatureCard>
           </RevealItem>
         </RevealGroup>
@@ -105,8 +101,8 @@ function FeatureCard({
   title,
   body,
   children,
-  accent,
   className,
+  sideBySide = false,
 }: {
   id?: string
   icon: React.ReactNode
@@ -114,11 +110,17 @@ function FeatureCard({
   title: string
   body: string
   children: React.ReactNode
-  accent: 'violet' | 'cyan' | 'magenta'
   className?: string
+  /**
+   * Set on the one card whose demo sits *beside* the copy at `lg` rather than
+   * under it. Only that card should drop the gap below the prose — applying
+   * `lg:mt-0` to every card, as this used to, collapsed the spacing on all of
+   * them at desktop width.
+   */
+  sideBySide?: boolean
 }) {
   return (
-    <GlassCard accent={accent} className="h-full">
+    <GlassCard className="h-full">
       <div id={id} className={cn('scroll-mt-28 p-6 sm:p-7', className)}>
         <div className="flex flex-col">
           <div className="flex items-center gap-2.5">
@@ -137,7 +139,9 @@ function FeatureCard({
           <p className="mt-2.5 text-pretty text-[13.5px] leading-relaxed text-white/45">{body}</p>
         </div>
 
-        <div className="mt-6 lg:mt-0">{children}</div>
+        {/* Clear air between the card's prose and the live demo under it, so
+            the two do not read as one block. */}
+        <div className={cn('mt-9', sideBySide && 'lg:mt-0')}>{children}</div>
       </div>
     </GlassCard>
   )

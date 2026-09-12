@@ -16,21 +16,18 @@ const STEPS = [
     title: 'Grab the signed APK',
     body: 'Download the latest build straight from GitHub Releases. Every release is signed with the same key, so it installs cleanly over your existing copy — session and settings intact.',
     detail: 'Requires Android 8.0 (API 26) or newer.',
-    accent: 'cyan' as const,
   },
   {
     icon: ShieldCheck,
     title: 'Allow the installer',
     body: 'Android will ask you to permit installs from whichever app you downloaded with. Enable "Install unknown apps" for your browser or file manager, then confirm.',
     detail: 'Settings → Apps → Special access → Install unknown apps.',
-    accent: 'violet' as const,
   },
   {
     icon: Sparkles,
     title: 'Press play',
-    body: 'Sign in with Google for personalized content, point BitChord at a module source for lossless, and you are listening. No subscription, no ads, no account required to start.',
+    body: 'Sign in with Google for personalized content, or just start playing. No subscription, no ads, and no account required to get going.',
     detail: 'Nothing is upsold. There is nothing to buy.',
-    accent: 'magenta' as const,
   },
 ]
 
@@ -68,7 +65,6 @@ export function Install() {
                 onFocusCapture={() => setActive(i)}
               >
                 <GlassCard
-                  accent={step.accent}
                   className={cn(
                     'h-full transition-colors duration-500',
                     isActive && 'border-white/20 bg-white/[0.055]',
@@ -85,15 +81,7 @@ export function Install() {
                             : 'border-white/[0.08] bg-white/[0.03]',
                         )}
                       >
-                        <Icon
-                          className={cn(
-                            'size-4 transition-colors duration-500',
-                            step.accent === 'cyan' && 'text-cyan-300',
-                            step.accent === 'violet' && 'text-violet-300',
-                            step.accent === 'magenta' && 'text-pink-300',
-                          )}
-                          aria-hidden
-                        />
+                        <Icon className="size-4 text-white/80" aria-hidden />
                       </span>
 
                       <span className="font-mono text-[2rem] font-bold leading-none tracking-tighter text-white/[0.07]">
@@ -116,7 +104,7 @@ export function Install() {
                     {/* Progress rail — fills on the active card. */}
                     <div className="mt-4 h-px w-full overflow-hidden bg-white/[0.07]">
                       <motion.div
-                        className="h-full bg-gradient-to-r from-violet-400 via-cyan-300 to-pink-300"
+                        className="h-full bg-white"
                         animate={{ width: isActive ? '100%' : '0%' }}
                         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                       />

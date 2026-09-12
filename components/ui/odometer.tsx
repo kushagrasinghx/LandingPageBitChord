@@ -96,7 +96,9 @@ export function Odometer({
     <span ref={ref} className={cn('tnum inline-flex items-baseline', className)}>
       <span className="sr-only">
         {prefix}
-        {value.toLocaleString('en-US')}
+        {/* Follows `separator` too, so the announced number matches the one on
+            screen rather than quietly grouping it. */}
+        {separator ? value.toLocaleString('en-US') : String(value)}
         {suffix}
       </span>
       {prefix ? <span aria-hidden>{prefix}</span> : null}

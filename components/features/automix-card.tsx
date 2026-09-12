@@ -46,12 +46,12 @@ export function AutomixCard() {
       {/* BPM handoff */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Disc3 className="size-3.5 text-violet-300" aria-hidden />
+          <Disc3 className="size-3.5 text-white/55" aria-hidden />
           <span className="font-mono text-[11px] tabular-nums text-white/70">{OUT_BPM} BPM</span>
         </div>
 
         <div className="relative flex-1">
-          <div className="h-px w-full bg-gradient-to-r from-violet-400/50 via-white/25 to-cyan-400/50" />
+          <div className="h-px w-full bg-gradient-to-r from-white/25 via-white/45 to-white/25" />
           <motion.span
             className="absolute -top-[3px] size-1.5 rounded-full bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.5)]"
             animate={{ left: ['0%', '100%'] }}
@@ -61,7 +61,7 @@ export function AutomixCard() {
 
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] tabular-nums text-white/70">{IN_BPM} BPM</span>
-          <Activity className="size-3.5 text-cyan-300" aria-hidden />
+          <Activity className="size-3.5 text-white/55" aria-hidden />
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export function AutomixCard() {
           {OUTGOING.map((h, i) => (
             <span
               key={i}
-              className="flex-1 rounded-full bg-gradient-to-t from-violet-500/40 to-violet-300/85"
+              className="flex-1 rounded-full bg-gradient-to-t from-white/25 to-white/70"
               style={{ height: pct(h * 0.66) }}
             />
           ))}
@@ -89,7 +89,7 @@ export function AutomixCard() {
           {INCOMING.map((h, i) => (
             <span
               key={i}
-              className="flex-1 rounded-full bg-gradient-to-t from-cyan-300/85 to-cyan-500/40"
+              className="flex-1 rounded-full bg-gradient-to-t from-white/70 to-white/25"
               style={{ height: pct(h * 0.52) }}
             />
           ))}
@@ -126,7 +126,7 @@ export function AutomixCard() {
           >
             Crossfade duration
           </label>
-          <span className="font-mono text-[11px] tabular-nums text-cyan-200">
+          <span className="font-mono text-[11px] tabular-nums text-white">
             {seconds.toFixed(0)}s
           </span>
         </div>
@@ -140,9 +140,9 @@ export function AutomixCard() {
           value={seconds}
           onChange={(e) => setSeconds(Number(e.target.value))}
           aria-valuetext={`${seconds} seconds`}
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(124,58,237,0.35)] [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(255,255,255,0.18)] [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white"
           style={{
-            background: `linear-gradient(to right, rgb(124 58 237 / 0.85) 0%, rgb(6 182 212 / 0.85) ${pct(
+            background: `linear-gradient(to right, rgb(255 255 255 / 0.55) 0%, rgb(255 255 255 / 0.9) ${pct(
               seconds / 12,
             )}, rgb(255 255 255 / 0.1) ${pct(seconds / 12)})`,
           }}

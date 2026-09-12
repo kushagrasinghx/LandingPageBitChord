@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUpRight, Bug, Github, Heart, Scale, Star } from 'lucide-react'
-import { WaveformMark } from '@/components/ui/waveform-mark'
+import { LogoWordmark } from '@/components/ui/logo'
 import { LiveMetric } from '@/components/ui/live-metric'
 import { Reveal } from '@/components/ui/reveal'
 import { useTelemetry } from '@/components/telemetry-provider'
@@ -43,14 +43,14 @@ export function Footer() {
   const year = 2026
 
   return (
-    <footer className="relative mt-8 border-t border-white/[0.07] px-6 pb-10 pt-16">
+    <footer className="relative mt-8 border-t border-line px-6 pb-10 pt-16">
       {/* Ambient wash so the page doesn't just stop. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 opacity-50"
         style={{
           background:
-            'radial-gradient(70% 100% at 50% 100%, rgba(124,58,237,0.28), transparent 70%)',
+            'radial-gradient(70% 100% at 50% 100%, rgba(255,255,255,0.09), transparent 70%)',
         }}
       />
 
@@ -58,14 +58,13 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-1">
-            <div className="flex items-center gap-2.5">
-              <WaveformMark />
-              <span className="text-[15px] font-bold tracking-[-0.02em] text-white">BitChord</span>
+            <div className="flex items-center">
+              <LogoWordmark className="-my-2 h-[52px]" />
             </div>
 
             <p className="max-w-xs text-pretty text-[13px] leading-relaxed text-white/40">
-              An aesthetic, open-source YouTube Music client with Hi-Res lossless playback,
-              beat-matched Automix and word-synced lyrics. Free forever.
+              An aesthetic, open-source YouTube Music client with beat-matched Automix,
+              character-synced lyrics and a monthly Replay. Free forever.
             </p>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -77,9 +76,9 @@ export function Footer() {
               >
                 <Github className="size-3.5" aria-hidden />
                 Star
-                <span className="inline-flex items-center gap-1 font-mono text-[11.5px] text-amber-300">
-                  <Star className="size-2.5 fill-amber-300" aria-hidden />
-                  <LiveMetric value={stars} digits={3} />
+                <span className="inline-flex items-center gap-1 font-mono text-[11.5px] text-white/70">
+                  <Star className="size-2.5 fill-white/70" aria-hidden />
+                  <LiveMetric value={stars} digits={3} separator={false} />
                 </span>
               </a>
 
@@ -128,14 +127,14 @@ export function Footer() {
 
         {/* Legal */}
         <Reveal delay={0.05}>
-          <div className="mt-14 flex flex-col gap-5 border-t border-white/[0.07] pt-7">
+          <div className="mt-14 flex flex-col gap-5 border-t border-line pt-7">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-white/30">
               <span className="inline-flex items-center gap-1.5">
                 <Scale className="size-3" aria-hidden />
                 GPL-3.0 · copyleft
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Heart className="size-3 text-pink-400/70" aria-hidden />
+                <Heart className="size-3 text-white/45" aria-hidden />
                 Built by{' '}
                 <a
                   href="https://github.com/kushagrasinghx"
@@ -151,7 +150,7 @@ export function Footer() {
 
             <p className="max-w-4xl text-pretty text-[11.5px] leading-relaxed text-white/25">
               Independent, non-commercial project. Not affiliated with, endorsed by, or connected to
-              YouTube, Google LLC, Deezer, Telegram, or any of their parent companies. BitChord does
+              YouTube, Google LLC, or any of their parent companies. BitChord does
               not host, upload, or store copyrighted media — it acts strictly as an interface to
               local device storage and public or user-authenticated APIs. You are responsible for
               ensuring your use complies with local copyright law and the terms of service of any
@@ -161,8 +160,7 @@ export function Footer() {
 
             <p className="text-[11px] text-white/20">
               Repository metrics on this page are fetched live from the GitHub REST API and cached
-              for five minutes. Audio specifications shown in the player mockup are illustrative —
-              actual bit depth and sample rate depend on your configured source.
+              for five minutes.
             </p>
           </div>
         </Reveal>

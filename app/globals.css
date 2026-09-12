@@ -2,17 +2,28 @@
 
 /* ---------------------------------------------------------------------------
    Design tokens
+
+   These mirror the app's own dark colour scheme one-for-one (see
+   ui/theme/Theme.kt) so the site and the product read as the same product:
+   black canvas, white ink, two grey surface steps and a single hairline.
+   There is no hue on this page at all — rank, status and emphasis are all
+   carried by luminance.
    --------------------------------------------------------------------------- */
 
 @theme {
-  /* Void canvas — everything else is layered on top of this. */
-  --color-void: #070709;
-  --color-void-lift: #0b0b10;
+  /* `background` — the canvas everything else is layered on. */
+  --color-canvas: #000000;
+  /* `surface` — panels that lift off the canvas. */
+  --color-surface: #0d0d0f;
+  /* `surfaceVariant` — the step above that. */
+  --color-surface-2: #1c1c1e;
 
-  /* Signal palette. */
-  --color-violet: #7c3aed;
-  --color-cyan: #06b6d4;
-  --color-magenta: #ec4899;
+  /* `onBackground` / `onSurface`. */
+  --color-fg: #ffffff;
+  /* `onSurfaceVariant` — every piece of secondary copy on the page. */
+  --color-fg-2: #8e8e93;
+  /* `outline` — the only stroke colour. */
+  --color-line: #2c2c2e;
 
   --font-sans:
     var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -96,19 +107,21 @@
 
 @layer base {
   * {
-    border-color: rgb(255 255 255 / 0.08);
+    border-color: var(--color-line);
   }
 
   html {
     scroll-behavior: smooth;
-    /* Anchor links land below the floating glass header instead of under it. */
-    scroll-padding-top: 7rem;
+    /* Just enough air above an anchored section. The header scrolls away with
+       the page, so there is no floating bar to clear. */
+    scroll-padding-top: 2rem;
     -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
   }
 
   body {
-    background-color: var(--color-void);
-    color: rgb(255 255 255 / 0.92);
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -116,7 +129,7 @@
   }
 
   ::selection {
-    background: rgb(124 58 237 / 0.4);
+    background: rgb(255 255 255 / 0.18);
     color: #fff;
   }
 
@@ -127,27 +140,27 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #070709;
+    background: #000000;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgb(124 58 237 / 0.55), rgb(6 182 212 / 0.45));
-    border: 3px solid #070709;
+    background: rgb(255 255 255 / 0.2);
+    border: 3px solid #000000;
     border-radius: 99px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgb(124 58 237 / 0.85), rgb(6 182 212 / 0.7));
+    background: rgb(255 255 255 / 0.34);
   }
 
   /* Firefox */
   * {
-    scrollbar-color: rgb(124 58 237 / 0.5) #070709;
+    scrollbar-color: rgb(255 255 255 / 0.22) #000000;
     scrollbar-width: thin;
   }
 
   :focus-visible {
-    outline: 2px solid rgb(6 182 212 / 0.75);
+    outline: 2px solid rgb(255 255 255 / 0.8);
     outline-offset: 3px;
     border-radius: 4px;
   }
@@ -158,22 +171,19 @@
    --------------------------------------------------------------------------- */
 
 @utility hairline {
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--color-line);
 }
 
-/** Frosted glass surface — the default elevated panel. */
+/**
+ * The default elevated panel.
+ *
+ * What separates a panel from the canvas is the same thing that separates them
+ * in the app: a faint lift in luminance plus a 1px hairline. No blur tint, no
+ * colour wash.
+ */
 @utility glass {
-  background-color: rgb(255 255 255 / 0.03);
-  backdrop-filter: blur(40px) saturate(140%);
-  -webkit-backdrop-filter: blur(40px) saturate(140%);
-  border: 1px solid rgb(255 255 255 / 0.08);
-}
-
-@utility glass-strong {
-  background-color: rgb(10 10 14 / 0.72);
-  backdrop-filter: blur(40px) saturate(150%);
-  -webkit-backdrop-filter: blur(40px) saturate(150%);
-  border: 1px solid rgb(255 255 255 / 0.1);
+  background-color: rgb(255 255 255 / 0.035);
+  border: 1px solid var(--color-line);
 }
 
 /** Sub-pixel dot-matrix field. Sits behind content at very low opacity. */
@@ -189,43 +199,58 @@
   background-size: 64px 64px;
 }
 
-/** Multi-stop gradient text mask for display headings. */
+/**
+ * The same grid, drawn to be seen rather than felt.
+ *
+ * A separate utility instead of a brighter opacity on `grid-lines`, so turning
+ * the hero's grid up cannot quietly brighten the one running behind the whole
+ * page.
+ */
+@utility grid-lines-strong {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/**
+ * Film grain.
+ *
+ * `feTurbulence` generates the grain in the browser rather than shipping a
+ * tiled noise bitmap — it is a few hundred bytes, resolution-independent, and
+ * cannot band on a wide gradient the way an 8-bit tile does. `stitchTiles`
+ * keeps the pattern seamless where the generated tile repeats.
+ *
+ * Always pair it with a low opacity on the element: at full strength this is
+ * television static.
+ */
+@utility noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/**
+ * Emphasis inside a display heading.
+ *
+ * The old treatment was a five-stop rainbow gradient. Monochrome type can't
+ * emphasise with hue, so it does it with luminance instead: the emphasised
+ * phrase is the only pure white in the heading and the rest sits a step back
+ * (see `text-gradient-soft`). A highlight bar was tried here and read as a
+ * stray text selection at display sizes.
+ */
 @utility text-gradient {
-  background-image: linear-gradient(
-    110deg,
-    #ffffff 0%,
-    #e9d5ff 26%,
-    #a78bfa 44%,
-    #22d3ee 66%,
-    #f9a8d4 86%,
-    #ffffff 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: var(--color-fg);
 }
 
+/** Base colour for section headings — one step back from the emphasis above. */
 @utility text-gradient-soft {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.55));
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: rgb(255 255 255 / 0.72);
 }
 
-/** Ambient bloom behind primary CTAs and focal cards. */
-@utility glow-violet {
+/** Ambient lift under primary CTAs and focal cards. */
+@utility glow-fg {
   box-shadow:
-    0 0 0 1px rgb(124 58 237 / 0.35),
-    0 8px 30px -6px rgb(124 58 237 / 0.55),
-    0 0 60px -12px rgb(124 58 237 / 0.45);
-}
-
-@utility glow-cyan {
-  box-shadow:
-    0 0 0 1px rgb(6 182 212 / 0.3),
-    0 8px 30px -8px rgb(6 182 212 / 0.45);
+    0 8px 30px -8px rgb(255 255 255 / 0.28),
+    0 0 0 1px rgb(255 255 255 / 0.12);
 }
 
 /** Specular top-edge highlight — reads as light catching a glass lip. */
@@ -236,9 +261,9 @@
 @utility shimmer-text {
   background-image: linear-gradient(
     100deg,
-    rgb(255 255 255 / 0.65) 20%,
+    rgb(255 255 255 / 0.55) 20%,
     rgb(255 255 255 / 1) 40%,
-    rgb(255 255 255 / 0.65) 60%
+    rgb(255 255 255 / 0.55) 60%
   );
   background-size: 200% 100%;
   background-clip: text;
@@ -252,9 +277,9 @@
 @utility skeleton {
   background-image: linear-gradient(
     100deg,
-    rgb(255 255 255 / 0.04) 20%,
-    rgb(255 255 255 / 0.11) 40%,
-    rgb(255 255 255 / 0.04) 60%
+    rgb(255 255 255 / 0.05) 20%,
+    rgb(255 255 255 / 0.13) 40%,
+    rgb(255 255 255 / 0.05) 60%
   );
   background-size: 200% 100%;
   animation: var(--animate-shimmer);

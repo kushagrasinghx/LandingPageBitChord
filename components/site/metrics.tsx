@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { RevealGroup, RevealItem } from '@/components/ui/reveal'
 import { useTelemetry } from '@/components/telemetry-provider'
 import { RELEASES_URL, REPO_URL, formatCompact } from '@/lib/github'
-import { cn } from '@/lib/utils'
 
 export function Metrics() {
   const { data } = useTelemetry()
@@ -30,13 +29,12 @@ export function Metrics() {
           <RevealItem>
             <MetricTile
               href={`${REPO_URL}/stargazers`}
-              accent="violet"
-              icon={<Star className="size-4 text-amber-300" aria-hidden />}
-              value={<LiveMetric value={stars} digits={3} />}
+              icon={<Star className="size-4 text-white/70" aria-hidden />}
+              value={<LiveMetric value={stars} digits={3} separator={false} />}
               label="Stargazers on GitHub"
               foot={
                 <>
-                  <span className="text-amber-300/80">★</span> growing daily
+                  <span className="text-white/60">★</span> growing daily
                 </>
               }
             />
@@ -46,8 +44,7 @@ export function Metrics() {
           <RevealItem>
             <MetricTile
               href={RELEASES_URL}
-              accent="cyan"
-              icon={<Package className="size-4 text-cyan-300" aria-hidden />}
+              icon={<Package className="size-4 text-white/70" aria-hidden />}
               value={<LiveMetric value={releases} digits={1} />}
               label="Production & Beta Releases"
               foot={
@@ -69,8 +66,7 @@ export function Metrics() {
           <RevealItem>
             <MetricTile
               href={`${REPO_URL}/forks`}
-              accent="magenta"
-              icon={<GitFork className="size-4 text-pink-300" aria-hidden />}
+              icon={<GitFork className="size-4 text-white/70" aria-hidden />}
               value={<LiveMetric value={forks} digits={2} />}
               label="Open Source Contributors & Forks"
               foot={
@@ -91,8 +87,7 @@ export function Metrics() {
           <RevealItem>
             <MetricTile
               href={`${REPO_URL}/blob/main/LICENSE`}
-              accent="cyan"
-              icon={<ShieldCheck className="size-4 text-emerald-300" aria-hidden />}
+              icon={<ShieldCheck className="size-4 text-white/70" aria-hidden />}
               value={<span className="tnum">100%</span>}
               label="Free — no ads, no tracking"
               foot={
@@ -114,17 +109,15 @@ function MetricTile({
   value,
   label,
   foot,
-  accent,
 }: {
   href: string
   icon: React.ReactNode
   value: React.ReactNode
   label: string
   foot: React.ReactNode
-  accent: 'violet' | 'cyan' | 'magenta'
 }) {
   return (
-    <GlassCard accent={accent} className="h-full">
+    <GlassCard className="h-full">
       <a
         href={href}
         target="_blank"

@@ -70,8 +70,8 @@ export function PipelineVisualizer() {
             className={cn(
               'size-1.5 rounded-full transition-colors duration-300',
               upgraded
-                ? 'bg-cyan-400 shadow-[0_0_8px_2px_rgba(6,182,212,0.7)]'
-                : 'bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.6)]',
+                ? 'bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.55)]'
+                : 'bg-white/40',
             )}
           />
           <span className="font-mono text-[11px] tabular-nums text-white/80">
@@ -90,7 +90,7 @@ export function PipelineVisualizer() {
         tone="warn"
         progress={progress}
         badge={
-          <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-amber-200">
+          <span className="inline-flex items-center gap-1 rounded-md border border-line bg-white/[0.04] px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-white/45">
             128 kbps · locked
           </span>
         }
@@ -99,23 +99,23 @@ export function PipelineVisualizer() {
           return {
             // Packets vanish through the stall window: that gap is the point.
             opacity: inStall ? 0 : 0.9,
-            color: 'rgba(251,191,36,0.85)',
+            color: 'rgba(255,255,255,0.34)',
             height: inStall ? 3 : 8 + (i % 3) * 3,
           }
         }}
         marker={
           <div
-            className="absolute inset-y-0 flex items-center justify-center border-x border-dashed border-amber-400/40 bg-amber-400/[0.07]"
+            className="absolute inset-y-0 flex items-center justify-center border-x border-dashed border-white/25 bg-white/[0.04]"
             style={{ left: pct(STALL_START), width: pct(STALL_END - STALL_START) }}
           >
-            <span className="whitespace-nowrap font-mono text-[8.5px] uppercase tracking-wider text-amber-200/90">
+            <span className="whitespace-nowrap font-mono text-[8.5px] uppercase tracking-wider text-white/50">
               re-buffer
             </span>
           </div>
         }
         status={
           stalling ? (
-            <span className="inline-flex items-center gap-1.5 text-amber-300">
+            <span className="inline-flex items-center gap-1.5 text-white/55">
               <AlertTriangle className="size-3" aria-hidden />
               Stalled — audible gap
             </span>
@@ -140,8 +140,8 @@ export function PipelineVisualizer() {
             className={cn(
               'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider',
               upgraded
-                ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'
-                : 'border-violet-400/30 bg-violet-400/10 text-violet-200',
+                ? 'border-white/35 bg-white/12 text-white'
+                : 'border-line bg-white/[0.04] text-white/55',
             )}
           >
             {upgraded ? '1,411 kbps · FLAC' : '128 kbps · Opus'}
@@ -150,8 +150,8 @@ export function PipelineVisualizer() {
         packets={(i, x) => ({
           opacity: 0.95,
           // Packets past the handoff carry lossless payload — drawn taller and
-          // in cyan so the transition is legible at a glance.
-          color: x >= HANDOFF ? 'rgba(34,211,238,0.9)' : 'rgba(167,139,250,0.85)',
+          // brighter so the transition is legible at a glance.
+          color: x >= HANDOFF ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
           height: x >= HANDOFF ? 14 + (i % 3) * 4 : 8 + (i % 3) * 3,
         })}
         marker={
@@ -159,20 +159,20 @@ export function PipelineVisualizer() {
             className="absolute inset-y-0 flex items-center"
             style={{ left: pct(HANDOFF) }}
           >
-            <span className="absolute inset-y-0 w-px bg-gradient-to-b from-transparent via-cyan-300 to-transparent" />
-            <span className="absolute -top-1 left-1.5 whitespace-nowrap rounded bg-cyan-400/15 px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-wider text-cyan-200">
+            <span className="absolute inset-y-0 w-px bg-gradient-to-b from-transparent via-white to-transparent" />
+            <span className="absolute -top-1 left-1.5 whitespace-nowrap rounded bg-white px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-wider text-canvas">
               upgrade
             </span>
           </div>
         }
         status={
           upgraded ? (
-            <span className="inline-flex items-center gap-1.5 text-cyan-300">
+            <span className="inline-flex items-center gap-1.5 text-white">
               <Check className="size-3" aria-hidden />
               Promoted to lossless — no re-buffer
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-violet-300">
+            <span className="inline-flex items-center gap-1.5 text-white/70">
               <Zap className="size-3" aria-hidden />
               First frame out in ~180 ms
             </span>
@@ -216,8 +216,8 @@ function Lane({
       className={cn(
         'rounded-2xl border p-4 transition-colors duration-500',
         tone === 'good'
-          ? 'border-cyan-400/15 bg-cyan-400/[0.035]'
-          : 'border-white/[0.07] bg-white/[0.015]',
+          ? 'border-white/20 bg-white/[0.045]'
+          : 'border-line bg-white/[0.012]',
       )}
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
@@ -235,8 +235,8 @@ function Lane({
           className={cn(
             'absolute inset-y-0 left-0 transition-none',
             tone === 'good'
-              ? 'bg-gradient-to-r from-violet-500/10 to-cyan-400/10'
-              : 'bg-amber-400/[0.06]',
+              ? 'bg-white/[0.07]'
+              : 'bg-white/[0.025]',
           )}
           style={{ width: pct(progress) }}
         />

@@ -49,7 +49,7 @@ export function Changelog() {
           {/* Spine */}
           <div
             aria-hidden
-            className="absolute bottom-0 left-[15px] top-2 w-px bg-gradient-to-b from-cyan-400/60 via-violet-500/35 to-transparent sm:left-[19px]"
+            className="absolute bottom-0 left-[15px] top-2 w-px bg-gradient-to-b from-white/45 via-white/20 to-transparent sm:left-[19px]"
           />
 
           <div className="flex flex-col gap-4">
@@ -121,8 +121,8 @@ function TimelineEntry({
         className={cn(
           'absolute left-0 top-5 grid size-[31px] place-items-center rounded-full border sm:size-[39px]',
           isLatest
-            ? 'border-cyan-400/40 bg-cyan-400/12 text-cyan-200'
-            : 'border-white/10 bg-white/[0.04] text-white/40',
+            ? 'border-white/35 bg-white/12 text-white'
+            : 'border-line bg-white/[0.03] text-white/40',
         )}
       >
         {isLatest ? (
@@ -130,7 +130,7 @@ function TimelineEntry({
             <CircleDot className="size-3.5 sm:size-4" aria-hidden />
             <span
               aria-hidden
-              className="absolute inset-0 animate-pulse-ring rounded-full border border-cyan-400/50"
+              className="absolute inset-0 animate-pulse-ring rounded-full border border-white/45"
             />
           </>
         ) : (
@@ -138,7 +138,7 @@ function TimelineEntry({
         )}
       </span>
 
-      <GlassCard accent={isLatest ? 'cyan' : 'violet'}>
+      <GlassCard>
         <div className="p-5">
           {/* Header */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -146,21 +146,21 @@ function TimelineEntry({
               className={cn(
                 'rounded-md border px-2 py-0.5 font-mono text-[11.5px] font-medium',
                 isLatest
-                  ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'
-                  : 'border-white/12 bg-white/[0.04] text-white/70',
+                  ? 'border-white/30 bg-white/10 text-white'
+                  : 'border-line bg-white/[0.03] text-white/70',
               )}
             >
               {release.tag}
             </span>
 
             {isLatest ? (
-              <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-emerald-300">
+              <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-canvas">
                 latest
               </span>
             ) : null}
 
             {release.prerelease ? (
-              <span className="rounded-full bg-amber-400/12 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-amber-300">
+              <span className="rounded-full border border-line bg-white/[0.04] px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-white/60">
                 beta
               </span>
             ) : null}
@@ -184,7 +184,7 @@ function TimelineEntry({
                 <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed text-white/50">
                   <span
                     aria-hidden
-                    className="mt-[7px] size-1 shrink-0 rounded-full bg-gradient-to-r from-violet-400 to-cyan-300"
+                    className="mt-[7px] size-1 shrink-0 rounded-full bg-white/45"
                   />
                   <span className="text-pretty">{line}</span>
                 </li>
