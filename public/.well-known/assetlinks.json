@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.music.bitchord",
+      "sha256_cert_fingerprints": [
+        "B5:89:57:22:34:6F:E3:86:36:59:7D:6E:2E:2E:CB:8D:29:63:FC:37:B1:38:D5:52:7E:52:5D:69:95:54:D9:21"
+      ]
+    }
+  }
+]

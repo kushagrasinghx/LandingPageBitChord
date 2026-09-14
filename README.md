@@ -147,6 +147,12 @@ Release notes are parsed in `lib/github.ts`: markdown bullets are extracted from
 
 Deploys as-is to any platform supporting Next.js 15 with ISR. On [Vercel](https://vercel.com/new), import the repository and accept the defaults; add `GITHUB_TOKEN` under project environment variables if you want the higher rate limit.
 
+Jam links use the verified Android App Link shape `/invite/{code}`. Android
+opens a six-character invite in the production app when it is installed; the
+web route redirects to the BitChord GitHub repository when it is not. Keep
+`public/.well-known/assetlinks.json` synchronized with the production package
+name and signing-certificate fingerprint if either changes.
+
 ```bash
 npm run build && npm start
 ```
