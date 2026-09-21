@@ -85,7 +85,7 @@ export default async function Page() {
       <Backdrop />
       <Nav />
 
-      <main>
+      <main id="main-content">
         <Hero />
         <Metrics />
         <Features />

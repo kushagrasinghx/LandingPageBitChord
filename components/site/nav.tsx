@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowDownToLine, Star } from 'lucide-react'
+import Link from 'next/link'
 import { MagneticButton } from '@/components/ui/magnetic-button'
 import { LiveMetric } from '@/components/ui/live-metric'
 import { LogoWordmark } from '@/components/ui/logo'
@@ -54,6 +55,13 @@ export function Nav() {
                 its height; see LogoWordmark. */}
             <LogoWordmark className="-my-2 h-10" />
           </a>
+
+          <Link
+            href="/docs"
+            className="hidden rounded-full px-3 py-2 text-[13px] text-white/60 transition-colors hover:text-white sm:inline-flex"
+          >
+            Addon Docs
+          </Link>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Live star count */}
