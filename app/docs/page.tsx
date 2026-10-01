@@ -12,7 +12,7 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'Addon developer guide',
   description:
-    'Build a BitChord addon with the manifest, search, stream, quality, and Dolby Atmos contracts.',
+    'Build a BitChord addon with the manifest, search, stream, quality, Dolby Atmos, download permission, and lossless output contracts.',
   alternates: { canonical: '/docs' },
 }
 

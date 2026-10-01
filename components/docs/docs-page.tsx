@@ -4,12 +4,15 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   ArrowRight,
+  Bluetooth,
+  Cable,
   Check,
   CheckCircle2,
   ChevronRight,
   CircleAlert,
   Clipboard,
   Code2,
+  Download,
   FileJson2,
   Headphones,
   Menu,
@@ -34,6 +37,8 @@ const navigation: NavItem[] = [
   { id: 'stream', label: 'Stream endpoint', group: 'Build' },
   { id: 'quality', label: 'Quality negotiation', group: 'Playback' },
   { id: 'dolby-atmos', label: 'Dolby Atmos', group: 'Playback' },
+  { id: 'downloads', label: 'Download permission', group: 'Playback' },
+  { id: 'lossless-output', label: 'Lossless output gate', group: 'Playback' },
   { id: 'install-test', label: 'Install and test', group: 'Ship' },
   { id: 'production', label: 'Production checklist', group: 'Ship' },
   { id: 'troubleshooting', label: 'Troubleshooting', group: 'Reference' },
@@ -44,6 +49,8 @@ const manifestCode = `{
   "name": "Reference Addon",
   "version": "1.0.0",
   "resources": ["search", "stream"],
+  "allowDownloads": 1,
+  "checkValidLossless": 0,
   "settings": [
     {
       "key": "quality",
@@ -185,6 +192,36 @@ GET /stream/dolby_8f31?quality=lossless&atmos=auto
   "encrypted": false
 }`
 
+const downloadsCode = `// manifest.json — stream in BitChord, but never be saved from it:
+{
+  "id": "dev.example.reference-addon",
+  "name": "Reference Addon",
+  "resources": ["search", "stream"],
+  "allowDownloads": 0
+}
+
+// Listener taps Download on a track this addon would play:
+//   1. Your addon is skipped for the download.
+//   2. The next enabled source in the listener's order is asked
+//      (another addon, then JioSaavn if enabled, then YouTube).
+//   3. Playback is unaffected — /search and /stream keep working.`
+
+const losslessOutputCode = `// manifest.json — only use this addon on a lossless-capable output:
+{
+  "id": "dev.example.hires-addon",
+  "name": "Hi-Res Addon",
+  "resources": ["search", "stream"],
+  "checkValidLossless": 1
+}
+
+// Phone speaker, or Bluetooth on SBC / AAC / aptX:
+//   no requests at all — not /manifest.json, not /search, not /stream.
+//   Tracks resolve from the next source; Sources shows a warning.
+
+// Wired, USB, HDMI, or Bluetooth on LDAC / LHDC / aptX Lossless:
+GET /search?q=midnight&quality=lossless&atmos=auto
+GET /stream/track_8f31?quality=lossless&atmos=auto`
+
 function CodeBlock({ code, label = 'JSON' }: { code: string; label?: string }) {
   const [copied, setCopied] = useState(false)
 
@@ -247,15 +284,19 @@ function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string
   )
 }
 
-function FieldTable({ rows }: { rows: Array<[string, string, string]> }) {
+function FieldTable({
+  rows,
+  headers = ['Field', 'Required', 'Meaning'],
+}: {
+  rows: Array<[string, string, string]>
+  headers?: [string, string, string]
+}) {
   return (
     <div className={styles.tableWrap}>
       <table>
         <thead>
           <tr>
-            <th>Field</th>
-            <th>Required</th>
-            <th>Meaning</th>
+            {headers.map((header) => <th key={header}>{header}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -497,6 +538,8 @@ export function DocsPage() {
                 ['version', 'Recommended', 'Displayed with health information.'],
                 ['resources', 'Recommended', 'Include search. Stream may be omitted only when rows carry streamURL.'],
                 ['settings', 'No', 'Defaults are forwarded as query parameters on search and stream requests.'],
+                ['allowDownloads', 'No · default 1', 'Set 0 to allow playback but not downloads. See Download permission.'],
+                ['checkValidLossless', 'No · default 0', 'Set 1 to be used only on a lossless-capable output. See Lossless output gate.'],
               ]} />
               <Callout title="Settings are defaults, not a form" tone="warn">
                 BitChord does not render an addon settings screen. It forwards scalar default values. The
@@ -601,6 +644,108 @@ export function DocsPage() {
               </Callout>
             </Section>
 
+            <Section id="downloads" eyebrow="Playback" title="Download permission">
+              <p>
+                Listeners can save tracks for offline playback. By default an addon serves those downloads the
+                same way it serves playback. Set <InlineCode>allowDownloads</InlineCode> to <InlineCode>0</InlineCode> in
+                your manifest if your addon may be streamed but should never be the source of a saved file.
+              </p>
+              <div className={styles.dolbyCard}>
+                <div className={styles.dolbyIcon}><Download /></div>
+                <div>
+                  <span>Manifest switch</span>
+                  <h3><InlineCode>allowDownloads</InlineCode> · default <InlineCode>1</InlineCode></h3>
+                  <p>
+                    With <InlineCode>0</InlineCode>, BitChord leaves your addon out of every download and asks the
+                    next enabled source in the listener’s order instead. Playback is not affected. If the key is
+                    missing, downloads are allowed.
+                  </p>
+                </div>
+              </div>
+              <CodeBlock code={downloadsCode} label="JSON + BEHAVIOUR" />
+              <h3>Download rules that matter</h3>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>Write it as a number or a boolean.</strong><p><InlineCode>1</InlineCode>/<InlineCode>0</InlineCode>, <InlineCode>true</InlineCode>/<InlineCode>false</InlineCode>, and the same values as strings are all accepted. Any other value is ignored and the default applies, so a typo never flips the setting the wrong way.</p></div></li>
+                <li><span>2</span><div><strong>Expect no separate download request.</strong><p>A download uses the same <InlineCode>/search</InlineCode> and <InlineCode>/stream</InlineCode> calls as playback. With <InlineCode>0</InlineCode>, those calls are never made for a download, so you don’t need to detect downloads on your server.</p></div></li>
+                <li><span>3</span><div><strong>Listeners see it.</strong><p>The addon’s row in Settings → Sources shows <em>Streaming only</em>. That tells the listener why a download came from another source.</p></div></li>
+                <li><span>4</span><div><strong>Changes apply on the next manifest read.</strong><p>BitChord saves the value when the addon is added and updates it each time it reads your manifest. Manifests are cached for 10 minutes.</p></div></li>
+              </ol>
+              <Callout title="A policy, not DRM" tone="warn">
+                <InlineCode>allowDownloads</InlineCode> is a promise BitChord keeps, not protection on your media. A
+                stream URL can still be fetched by anything that has it. If files must not leave your server, rely on
+                short-lived signed URLs and your own access control as well.
+              </Callout>
+            </Section>
+
+            <Section id="lossless-output" eyebrow="Playback" title="Lossless output gate">
+              <p>
+                Some catalogues only want to serve listeners who will actually hear lossless audio. Set{' '}
+                <InlineCode>checkValidLossless</InlineCode> to <InlineCode>1</InlineCode> and BitChord uses your addon only
+                while the phone has a lossless-capable output connected. Otherwise your server isn’t contacted at all.
+              </p>
+              <div className={styles.dolbyCard}>
+                <div className={styles.dolbyIcon}><Cable /></div>
+                <div>
+                  <span>Manifest switch</span>
+                  <h3><InlineCode>checkValidLossless</InlineCode> · default <InlineCode>0</InlineCode></h3>
+                  <p>
+                    With <InlineCode>1</InlineCode>, BitChord checks the connected audio output before every request.
+                    On the phone speaker or a lossy Bluetooth codec it sends nothing: no manifest, health check,
+                    search or stream. If the key is missing, there is no check.
+                  </p>
+                </div>
+              </div>
+              <CodeBlock code={losslessOutputCode} label="JSON + HTTP" />
+              <h3>Outputs that qualify</h3>
+              <FieldTable
+                headers={['Output', 'Qualifies', 'Notes']}
+                rows={[
+                  ['3.5mm headphones / headset', 'Yes', 'Wired headphones or a headset on the headphone jack.'],
+                  ['USB-C audio', 'Yes', 'USB-C headphones, USB DACs and USB audio accessories.'],
+                  ['Line out / aux', 'Yes', 'Analog or digital line out, and aux line.'],
+                  ['HDMI, ARC, eARC', 'Yes', 'A TV, AV receiver or soundbar over HDMI.'],
+                  ['Dock', 'Yes', 'Digital and analog audio docks.'],
+                  ['Bluetooth · LDAC', 'Yes', 'Any LDAC quality mode: 990, 660, 330 kbps or adaptive.'],
+                  ['Bluetooth · LHDC', 'Yes', 'LHDC V3, V4 and V5.'],
+                  ['Bluetooth · aptX Lossless', 'Yes', 'When Android reports the codec as aptX Lossless.'],
+                  ['Bluetooth · SBC, AAC, aptX, aptX HD, aptX Adaptive', 'No', 'Lossy codecs below CD bitrate.'],
+                  ['LE Audio (LC3), Opus, hearing aids', 'No', 'Lossy codecs.'],
+                  ['Phone speaker / earpiece, casting', 'No', 'The audio doesn’t reach a lossless path.'],
+                ]}
+              />
+              <div className={styles.dolbyCard}>
+                <div className={styles.dolbyIcon}><Bluetooth /></div>
+                <div>
+                  <span>How Bluetooth is checked</span>
+                  <h3>BitChord reads the codec Android reports</h3>
+                  <p>
+                    On Android 12 and later this needs the Nearby devices permission. If an addon is waiting and
+                    BitChord can’t read the codec, Settings → Sources offers <em>Check Bluetooth codec</em> to grant
+                    it. LHDC and aptX Lossless are named by Android 15+ and by phones whose maker reports vendor
+                    codecs. Where Android doesn’t report the codec, BitChord treats it as unknown and doesn’t
+                    count it.
+                  </p>
+                </div>
+              </div>
+              <h3>Lossless gate rules that matter</h3>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>The first contact is the manifest.</strong><p>BitChord has to read your manifest once to learn the switch: when the listener tests or saves the addon. After that the value is stored on the device, so a gated addon is never contacted just to check whether it is still gated.</p></div></li>
+                <li><span>2</span><div><strong>Nothing reaches you while no output qualifies.</strong><p>The addon is left out of playback, search and downloads, and every request path refuses before it opens a connection. That includes queued tracks that already name your addon. They resolve from the next source.</p></div></li>
+                <li><span>3</span><div><strong>It resumes on its own.</strong><p>When the listener plugs in headphones or switches Bluetooth to LDAC/LHDC, the addon rejoins the source order immediately, with no restart. Its health check runs again on the Sources screen.</p></div></li>
+                <li><span>4</span><div><strong>The listener is told why.</strong><p>The addon’s row in Settings → Sources says <em>Needs a lossless output</em>. If Bluetooth is connected, the row names the current codec so the listener knows what to change.</p></div></li>
+                <li><span>5</span><div><strong>Turning it on for an existing addon.</strong><p>Devices that already have your addon learn the new value the next time they read your manifest (cached for 10 minutes). That read is the last request they make until a qualifying output is connected.</p></div></li>
+              </ol>
+              <Callout title="LDAC and LHDC are high-resolution, not bit-exact">
+                Strictly, only a cable carries a bit-exact signal. LDAC and LHDC are high-bitrate lossy codecs. They
+                qualify because they are the closest wireless option and what listeners expect a lossless addon to
+                work with. If you need a strictly bit-exact path, say so in your addon’s own description.
+              </Callout>
+              <p className={styles.detailNote}>
+                Both switches need BitChord 1.7.1 or later. Earlier versions ignore unknown manifest keys, so adding
+                them is always safe.
+              </p>
+            </Section>
+
             <Section id="install-test" eyebrow="Ship" title="Install and test">
               <div className={styles.steps}>
                 {[
@@ -638,6 +783,8 @@ export function DocsPage() {
                   'Logs never expose path-based tokens',
                   'Stereo fallback for Dolby auto mode',
                   'Representative duration metadata',
+                  'allowDownloads set deliberately',
+                  'checkValidLossless only if you need it',
                 ].map((item) => <div key={item}><Check />{item}</div>)}
               </div>
             </Section>
@@ -650,6 +797,9 @@ export function DocsPage() {
                   ['Audio fails on an extensionless URL', 'Declare manifest as hls or dash. For direct audio, provide codec and container.'],
                   ['A track falls back to another source', 'Return 404 only for a true miss. Check for an empty URL, an encrypted response, malformed URL, or unsupported Dolby stream.'],
                   ['Dolby always returns stereo', 'Read atmos=auto on both search and stream. If Dolby is a separate catalogue row, mark that row with atmos or audioModes.'],
+                  ['Downloads come from another source', 'Your manifest has allowDownloads set to 0 (the row in Sources says Streaming only). Remove the key or set it to 1; devices pick the change up on their next manifest read.'],
+                  ['The addon gets no requests at all', 'If checkValidLossless is 1, BitChord stays silent until a wired, USB, HDMI or LDAC/LHDC/aptX Lossless output is connected. The row in Sources says Needs a lossless output. On Bluetooth, grant Nearby devices so the codec can be read.'],
+                  ['LDAC headphones are not accepted', 'Check that the phone is actually using LDAC (Developer options → Bluetooth audio codec) and that Nearby devices is allowed for BitChord. Without that permission the codec is unknown and does not count.'],
                   ['The wrong recording is selected', 'Improve artist, album, and duration metadata. Avoid live, edit, remix, or instrumental variants unless the query asks for them.'],
                 ].map(([title, copy]) => (
                   <details key={title}>
