@@ -3,28 +3,31 @@
 import Link from 'next/link'
 import {
   ArrowLeft,
-  ArrowRight,
-  Bluetooth,
-  Cable,
+  ArrowUpRight,
   Check,
   CheckCircle2,
   ChevronRight,
-  CircleAlert,
   Clipboard,
-  Code2,
-  Download,
-  FileJson2,
-  Headphones,
+  Info,
+  Lightbulb,
   Menu,
   Search,
-  Server,
-  Sparkles,
+  TriangleAlert,
   X,
-  Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { LogoWordmark } from '@/components/ui/logo'
+import { ISSUES_URL, REPO_URL } from '@/lib/github'
 import styles from './docs-page.module.css'
+
+/**
+ * The addon developer guide.
+ *
+ * Laid out like a conventional reference: a slim sticky header, the section
+ * list on the left, one readable column of prose, and an "On this page" rail
+ * for the subheadings of whichever section is being read. Nothing decorative —
+ * the code, the tables and the callouts carry the page.
+ */
 
 type NavItem = { id: string; label: string; group: string }
 
@@ -222,6 +225,58 @@ const losslessOutputCode = `// manifest.json — only use this addon on a lossle
 GET /search?q=midnight&quality=lossless&atmos=auto
 GET /stream/track_8f31?quality=lossless&atmos=auto`
 
+
+const DISCORD_URL = 'https://discord.gg/pSafNTyKZx'
+
+/** A heading id from its text, so subheadings can be linked and listed. */
+function slug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+function textOf(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(textOf).join('')
+  if (node && typeof node === 'object' && 'props' in node) {
+    return textOf((node as { props: { children?: ReactNode } }).props.children)
+  }
+  return ''
+}
+
+/* --------------------------------- syntax -------------------------------- */
+
+/**
+ * A small highlighter for the guide's samples: JSON, JavaScript and request
+ * lines. Comments, keys, strings, literals, numbers, keywords and HTTP methods
+ * — enough to read a sample at a glance, without a dependency.
+ */
+const TOKENS =
+  /(\/\/.*$)|("(?:[^"\\\n]|\\.)*")(?=\s*:)|("(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(true|false|null)\b|\b(\d+(?:\.\d+)?)\b|\b(const|function|return|if|export|async|await|new)\b|^(GET|POST)(?= )/gm
+
+const TOKEN_KINDS = ['comment', 'key', 'string', 'literal', 'number', 'keyword', 'method'] as const
+
+function highlight(code: string): ReactNode[] {
+  const out: ReactNode[] = []
+  let last = 0
+  for (const m of code.matchAll(TOKENS)) {
+    const at = m.index ?? 0
+    if (at > last) out.push(code.slice(last, at))
+    const kind = TOKEN_KINDS[m.slice(1).findIndex((group) => group !== undefined)] ?? 'string'
+    out.push(
+      <span key={at} className={styles[`tk_${kind}`]}>
+        {m[0]}
+      </span>,
+    )
+    last = at + m[0].length
+  }
+  if (last < code.length) out.push(code.slice(last))
+  return out
+}
+
+/* ------------------------------- primitives ------------------------------ */
+
 function CodeBlock({ code, label = 'JSON' }: { code: string; label?: string }) {
   const [copied, setCopied] = useState(false)
 
@@ -234,14 +289,14 @@ function CodeBlock({ code, label = 'JSON' }: { code: string; label?: string }) {
   return (
     <div className={styles.codeBlock}>
       <div className={styles.codeHeader}>
-        <span>{label}</span>
+        <span>{label.toLowerCase()}</span>
         <button type="button" onClick={copy} aria-label="Copy code">
-          {copied ? <Check className="size-3.5" /> : <Clipboard className="size-3.5" />}
+          {copied ? <Check className="size-4" aria-hidden /> : <Clipboard className="size-4" aria-hidden />}
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
       <pre>
-        <code>{code}</code>
+        <code>{highlight(code)}</code>
       </pre>
     </div>
   )
@@ -251,6 +306,7 @@ function InlineCode({ children }: { children: ReactNode }) {
   return <code className={styles.inlineCode}>{children}</code>
 }
 
+/** Note / Warning / Tip, as most reference docs draw them. */
 function Callout({
   title,
   children,
@@ -260,13 +316,13 @@ function Callout({
   children: ReactNode
   tone?: 'note' | 'warn' | 'success'
 }) {
-  const Icon = tone === 'warn' ? CircleAlert : tone === 'success' ? CheckCircle2 : Sparkles
+  const Icon = tone === 'warn' ? TriangleAlert : tone === 'success' ? Lightbulb : Info
   return (
     <aside className={`${styles.callout} ${styles[tone]}`}>
-      <Icon className="size-4 shrink-0" aria-hidden />
+      <Icon className={styles.calloutIcon} aria-hidden />
       <div>
-        <strong>{title}</strong>
-        <div>{children}</div>
+        <p className={styles.calloutTitle}>{title}</p>
+        <div className={styles.calloutBody}>{children}</div>
       </div>
     </aside>
   )
@@ -274,14 +330,30 @@ function Callout({
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} className={styles.section}>
-      <span className={styles.eyebrow}>{eyebrow}</span>
-      <h2>
+    <section id={id} className={styles.section} aria-labelledby={`${id}-title`}>
+      <p className={styles.eyebrow}>{eyebrow}</p>
+      <h2 id={`${id}-title`}>
         <a href={`#${id}`}>{title}</a>
       </h2>
       {children}
     </section>
   )
+}
+
+/** A subheading with an id, so it can be linked and listed in the rail. */
+function H3({ children }: { children: ReactNode }) {
+  const id = slug(textOf(children))
+  return (
+    <h3 id={id} data-toc>
+      <a href={`#${id}`}>{children}</a>
+    </h3>
+  )
+}
+
+function RequirementBadge({ value }: { value: string }) {
+  if (value === 'Yes') return <span className={`${styles.badge} ${styles.badgeRequired}`}>Required</span>
+  if (value === 'Recommended') return <span className={styles.badge}>Recommended</span>
+  return <span className={styles.optional}>{value === 'No' ? 'Optional' : value.replace(/^No · /, 'Optional · ')}</span>
 }
 
 function FieldTable({
@@ -291,6 +363,9 @@ function FieldTable({
   rows: Array<[string, string, string]>
   headers?: [string, string, string]
 }) {
+  // Field references put the name in code and grade the requirement; the
+  // outputs table is plain text with a yes / no.
+  const reference = headers[0] === 'Field'
   return (
     <div className={styles.tableWrap}>
       <table>
@@ -302,8 +377,14 @@ function FieldTable({
         <tbody>
           {rows.map(([field, required, meaning]) => (
             <tr key={field}>
-              <td><InlineCode>{field}</InlineCode></td>
-              <td>{required}</td>
+              <td className={styles.fieldCell}>{reference ? <InlineCode>{field}</InlineCode> : field}</td>
+              <td className={styles.requiredCell}>
+                {reference ? (
+                  <RequirementBadge value={required} />
+                ) : (
+                  <span className={required === 'Yes' ? styles.yes : styles.no}>{required}</span>
+                )}
+              </td>
               <td>{meaning}</td>
             </tr>
           ))}
@@ -313,10 +394,13 @@ function FieldTable({
   )
 }
 
+/* ---------------------------------- page --------------------------------- */
+
 export function DocsPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState('introduction')
+  const [subheadings, setSubheadings] = useState<{ id: string; label: string }[]>([])
   const searchRef = useRef<HTMLInputElement>(null)
 
   const matches = useMemo(() => {
@@ -372,7 +456,15 @@ export function DocsPage() {
     }
   }, [])
 
+  // The rail lists the subheadings of the section being read.
+  useEffect(() => {
+    const section = document.getElementById(active)
+    const found = section ? [...section.querySelectorAll<HTMLElement>('h3[data-toc]')] : []
+    setSubheadings(found.map((h) => ({ id: h.id, label: h.textContent ?? '' })))
+  }, [active])
+
   const groups = [...new Set(navigation.map((item) => item.group))]
+  const activeItem = navigation.find((item) => item.id === active)
 
   return (
     <div className={styles.docs}>
@@ -381,16 +473,18 @@ export function DocsPage() {
           <Link href="/" className={styles.brand} aria-label="BitChord home">
             <LogoWordmark className={styles.logo} />
           </Link>
-          <span className={styles.divider} />
-          <span className={styles.product}>Developer Docs</span>
+          <span className={styles.divider} aria-hidden />
+          <Link href="/docs" className={styles.product}>
+            Docs
+          </Link>
 
           <div className={styles.searchWrap}>
-            <Search className="size-4" aria-hidden />
+            <Search className={styles.searchIcon} aria-hidden />
             <input
               ref={searchRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search the guide…"
+              placeholder="Search docs"
               aria-label="Search documentation"
             />
             <kbd>/</kbd>
@@ -406,10 +500,15 @@ export function DocsPage() {
             )}
           </div>
 
-          <Link href="/" className={styles.backLink}>
-            <ArrowLeft className="size-3.5" />
-            Back to site
-          </Link>
+          <nav className={styles.headerLinks} aria-label="Site">
+            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>
+            <Link href="/" className={styles.backLink}>
+              <ArrowLeft className="size-4" aria-hidden />
+              Back to site
+            </Link>
+          </nav>
           <button
             type="button"
             className={styles.menuButton}
@@ -432,14 +531,14 @@ export function DocsPage() {
                   <a
                     key={item.id}
                     href={`#${item.id}`}
+                    aria-current={active === item.id ? 'location' : undefined}
                     className={active === item.id ? styles.navActive : ''}
                     onClick={() => {
                       setActive(item.id)
                       setMobileOpen(false)
                     }}
                   >
-                    <span>{item.label}</span>
-                    {active === item.id && <ChevronRight className="size-3" aria-hidden />}
+                    {item.label}
                   </a>
                 ))}
               </div>
@@ -450,26 +549,34 @@ export function DocsPage() {
         {mobileOpen && <button className={styles.scrim} onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
 
         <main id="main-content" className={styles.main}>
-          <div className={styles.article}>
-            <section id="introduction" className={styles.hero}>
-              <div className={styles.heroPill}><Code2 className="size-3.5" /> Addon protocol</div>
-              <h1>Build an addon for BitChord</h1>
+          <article className={styles.article}>
+            <section id="introduction" className={styles.intro} aria-labelledby="introduction-title">
+              <p className={styles.eyebrow}>Addon protocol</p>
+              <h1 id="introduction-title">Build an addon for BitChord</h1>
               <p className={styles.lede}>
                 Connect your own audio catalogue to BitChord with three small JSON endpoints.
                 Your server searches tracks, resolves a playable stream, and describes the audio accurately.
               </p>
-              <div className={styles.heroActions}>
-                <a href="#quickstart" className={styles.primaryAction}>
-                  Start building <ArrowRight className="size-4" />
-                </a>
-                <a href="#dolby-atmos" className={styles.secondaryAction}>
-                  <Headphones className="size-4" /> Dolby Atmos
-                </a>
-              </div>
-              <div className={styles.statGrid}>
-                <div><Server /><strong>3</strong><span>HTTP routes</span></div>
-                <div><FileJson2 /><strong>JSON</strong><span>Wire format</span></div>
-                <div><Zap /><strong>GET</strong><span>Every request</span></div>
+              <ul className={styles.facts} aria-label="At a glance">
+                <li><strong>3</strong> HTTP routes</li>
+                <li><strong>JSON</strong> wire format</li>
+                <li><strong>GET</strong> every request</li>
+              </ul>
+
+              <div className={styles.cardGrid}>
+                {[
+                  ['#quickstart', 'Quickstart', 'Expose three routes from any HTTPS server.'],
+                  ['#manifest', 'Manifest', 'Declare your addon, its resources and switches.'],
+                  ['#dolby-atmos', 'Dolby Atmos', 'Serve immersive mixes alongside stereo.'],
+                ].map(([href, title, copy]) => (
+                  <a key={href} href={href} className={styles.linkCard}>
+                    <span className={styles.linkCardTitle}>
+                      {title}
+                      <ChevronRight className="size-4" aria-hidden />
+                    </span>
+                    <span className={styles.linkCardCopy}>{copy}</span>
+                  </a>
+                ))}
               </div>
             </section>
 
@@ -490,16 +597,15 @@ export function DocsPage() {
                   ['02', 'Match', 'GET /search?q=…'],
                   ['03', 'Resolve', 'GET /stream/{id}'],
                   ['04', 'Play', 'Open returned URL'],
-                ].map(([step, title, detail], index) => (
+                ].map(([step, title, detail]) => (
                   <div className={styles.flowItem} key={step}>
                     <span>{step}</span>
                     <strong>{title}</strong>
                     <code>{detail}</code>
-                    {index < 3 && <ArrowRight aria-hidden />}
                   </div>
                 ))}
               </div>
-              <h3>What BitChord does with your answer</h3>
+              <H3>What BitChord does with your answer</H3>
               <ul className={styles.checkList}>
                 <li><CheckCircle2 />Matches title, artist, album, and duration to avoid the wrong recording.</li>
                 <li><CheckCircle2 />Negotiates lossless, high, or low quality for the current request.</li>
@@ -514,9 +620,9 @@ export function DocsPage() {
                 connect <InlineCode>handleRequest</InlineCode> to the router you already use.
               </p>
               <div className={styles.fileTree}>
-                <div><FileJson2 /><span>manifest.json</span><small>identity + capabilities</small></div>
-                <div><Search /><span>GET /search</span><small>catalogue lookup</small></div>
-                <div><Headphones /><span>GET /stream/:id</span><small>playable audio</small></div>
+                <div><span>manifest.json</span><small>identity + capabilities</small></div>
+                <div><span>GET /search</span><small>catalogue lookup</small></div>
+                <div><span>GET /stream/:id</span><small>playable audio</small></div>
               </div>
               <CodeBlock code={serverCode} label="JAVASCRIPT" />
               <Callout title="Use absolute URLs">
@@ -605,7 +711,7 @@ export function DocsPage() {
                 <div><span>HIGH</span><strong>Best lossy request</strong><p>Return your best lossy rendition, commonly near 320 kbps.</p></div>
                 <div><span>LOW</span><strong>Metered request</strong><p>Return a compact rendition, commonly 128 kbps or below.</p></div>
               </div>
-              <h3>Do not overstate the stream</h3>
+              <H3>Do not overstate the stream</H3>
               <p>
                 BitChord verifies quality using the codec it actually decodes. A lossless label on a lossy URL
                 does not create a lossless badge. Accurate codec, sample-rate, bit-depth, and bitrate fields make
@@ -619,11 +725,10 @@ export function DocsPage() {
                 Some catalogues expose Dolby as another rendition of one id; others return a separate track id.
                 Your addon should support both shapes.
               </p>
-              <div className={styles.dolbyCard}>
-                <div className={styles.dolbyIcon}><Headphones /></div>
+              <div className={styles.propertyCard}>
                 <div>
                   <span>Request behavior</span>
-                  <h3>Respond to <InlineCode>atmos=auto</InlineCode></h3>
+                  <p className={styles.propertyTitle}>Respond to <InlineCode>atmos=auto</InlineCode></p>
                   <p>
                     BitChord adds this hint only when the device has a compatible decoder and the listener has
                     Dolby enabled. “Auto” means prefer Dolby when available, otherwise return stereo.
@@ -631,7 +736,7 @@ export function DocsPage() {
                 </div>
               </div>
               <CodeBlock code={dolbyCode} label="HTTP + JSON" />
-              <h3>Dolby rules that matter</h3>
+              <H3>Dolby rules that matter</H3>
               <ol className={styles.numberList}>
                 <li><span>1</span><div><strong>Mark separate rows.</strong><p>Use <InlineCode>atmos: true</InlineCode>, <InlineCode>audioMode</InlineCode>, or <InlineCode>audioModes</InlineCode>. This lets BitChord prefer the Dolby row even if its catalogue quality label says LOW.</p></div></li>
                 <li><span>2</span><div><strong>Use a recognized codec.</strong><p>Return <InlineCode>eac3-joc</InlineCode> or a clear Dolby label. BitChord normalizes common underscore and hyphen spellings.</p></div></li>
@@ -650,11 +755,10 @@ export function DocsPage() {
                 same way it serves playback. Set <InlineCode>allowDownloads</InlineCode> to <InlineCode>0</InlineCode> in
                 your manifest if your addon may be streamed but should never be the source of a saved file.
               </p>
-              <div className={styles.dolbyCard}>
-                <div className={styles.dolbyIcon}><Download /></div>
+              <div className={styles.propertyCard}>
                 <div>
                   <span>Manifest switch</span>
-                  <h3><InlineCode>allowDownloads</InlineCode> · default <InlineCode>1</InlineCode></h3>
+                  <p className={styles.propertyTitle}><InlineCode>allowDownloads</InlineCode> · default <InlineCode>1</InlineCode></p>
                   <p>
                     With <InlineCode>0</InlineCode>, BitChord leaves your addon out of every download and asks the
                     next enabled source in the listener’s order instead. Playback is not affected. If the key is
@@ -663,7 +767,7 @@ export function DocsPage() {
                 </div>
               </div>
               <CodeBlock code={downloadsCode} label="JSON + BEHAVIOUR" />
-              <h3>Download rules that matter</h3>
+              <H3>Download rules that matter</H3>
               <ol className={styles.numberList}>
                 <li><span>1</span><div><strong>Write it as a number or a boolean.</strong><p><InlineCode>1</InlineCode>/<InlineCode>0</InlineCode>, <InlineCode>true</InlineCode>/<InlineCode>false</InlineCode>, and the same values as strings are all accepted. Any other value is ignored and the default applies, so a typo never flips the setting the wrong way.</p></div></li>
                 <li><span>2</span><div><strong>Expect no separate download request.</strong><p>A download uses the same <InlineCode>/search</InlineCode> and <InlineCode>/stream</InlineCode> calls as playback. With <InlineCode>0</InlineCode>, those calls are never made for a download, so you don’t need to detect downloads on your server.</p></div></li>
@@ -679,15 +783,15 @@ export function DocsPage() {
 
             <Section id="lossless-output" eyebrow="Playback" title="Lossless output gate">
               <p>
-                Some catalogues only want to serve listeners who will actually hear lossless audio. Set{' '}
+                Some catalogues only want to serve listeners who will actually hear lossless audio. On BitChord
+                for Android, set{' '}
                 <InlineCode>checkValidLossless</InlineCode> to <InlineCode>1</InlineCode> and BitChord uses your addon only
                 while the phone has a lossless-capable output connected. Otherwise your server isn’t contacted at all.
               </p>
-              <div className={styles.dolbyCard}>
-                <div className={styles.dolbyIcon}><Cable /></div>
+              <div className={styles.propertyCard}>
                 <div>
                   <span>Manifest switch</span>
-                  <h3><InlineCode>checkValidLossless</InlineCode> · default <InlineCode>0</InlineCode></h3>
+                  <p className={styles.propertyTitle}><InlineCode>checkValidLossless</InlineCode> · default <InlineCode>0</InlineCode></p>
                   <p>
                     With <InlineCode>1</InlineCode>, BitChord checks the connected audio output before every request.
                     On the phone speaker or a lossy Bluetooth codec it sends nothing: no manifest, health check,
@@ -696,7 +800,7 @@ export function DocsPage() {
                 </div>
               </div>
               <CodeBlock code={losslessOutputCode} label="JSON + HTTP" />
-              <h3>Outputs that qualify</h3>
+              <H3>Outputs that qualify</H3>
               <FieldTable
                 headers={['Output', 'Qualifies', 'Notes']}
                 rows={[
@@ -713,11 +817,10 @@ export function DocsPage() {
                   ['Phone speaker / earpiece, casting', 'No', 'The audio doesn’t reach a lossless path.'],
                 ]}
               />
-              <div className={styles.dolbyCard}>
-                <div className={styles.dolbyIcon}><Bluetooth /></div>
+              <div className={styles.propertyCard}>
                 <div>
                   <span>How Bluetooth is checked</span>
-                  <h3>BitChord reads the codec Android reports</h3>
+                  <p className={styles.propertyTitle}>BitChord reads the codec Android reports</p>
                   <p>
                     On Android 12 and later this needs the Nearby devices permission. If an addon is waiting and
                     BitChord can’t read the codec, Settings → Sources offers <em>Check Bluetooth codec</em> to grant
@@ -727,7 +830,7 @@ export function DocsPage() {
                   </p>
                 </div>
               </div>
-              <h3>Lossless gate rules that matter</h3>
+              <H3>Lossless gate rules that matter</H3>
               <ol className={styles.numberList}>
                 <li><span>1</span><div><strong>The first contact is the manifest.</strong><p>BitChord has to read your manifest once to learn the switch: when the listener tests or saves the addon. After that the value is stored on the device, so a gated addon is never contacted just to check whether it is still gated.</p></div></li>
                 <li><span>2</span><div><strong>Nothing reaches you while no output qualifies.</strong><p>The addon is left out of playback, search and downloads, and every request path refuses before it opens a connection. That includes queued tracks that already name your addon. They resolve from the next source.</p></div></li>
@@ -741,8 +844,10 @@ export function DocsPage() {
                 work with. If you need a strictly bit-exact path, say so in your addon’s own description.
               </Callout>
               <p className={styles.detailNote}>
-                Both switches need BitChord 1.7.1 or later. Earlier versions ignore unknown manifest keys, so adding
-                them is always safe.
+                Both switches need BitChord 1.7.1 or later. <InlineCode>allowDownloads</InlineCode> is honoured
+                by BitChord for Android and desktop; <InlineCode>checkValidLossless</InlineCode> by Android only,
+                and the desktop app ignores it. Earlier versions ignore unknown manifest keys, so adding them is
+                always safe.
               </p>
             </Section>
 
@@ -810,15 +915,41 @@ export function DocsPage() {
               </div>
             </Section>
 
-            <div className={styles.finishCard}>
-              <span>Ready to connect?</span>
-              <h2>Ship the smallest honest contract.</h2>
-              <p>Three routes, accurate metadata, graceful misses. BitChord handles the rest.</p>
-              <a href="#quickstart">Review the quickstart <ArrowRight /></a>
-            </div>
-          </div>
 
+            <footer className={styles.pageFooter}>
+              <div>
+                <p className={styles.pageFooterTitle}>Need help?</p>
+                <p>Questions about the protocol, or something that does not behave as described here.</p>
+              </div>
+              <div className={styles.pageFooterLinks}>
+                <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
+                  Open an issue <ArrowUpRight className="size-4" aria-hidden />
+                </a>
+                <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+                  Ask on Discord <ArrowUpRight className="size-4" aria-hidden />
+                </a>
+              </div>
+            </footer>
+          </article>
         </main>
+
+        <aside className={styles.toc} aria-label="On this page">
+          <p className={styles.tocTitle}>On this page</p>
+          <a href={`#${active}`} className={styles.tocSection}>
+            {activeItem?.label ?? 'Introduction'}
+          </a>
+          {subheadings.map((h) => (
+            <a key={h.id} href={`#${h.id}`} className={styles.tocItem}>
+              {h.label}
+            </a>
+          ))}
+          <div className={styles.tocLinks}>
+            <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
+              Report an issue
+            </a>
+            <a href="#introduction">Back to top</a>
+          </div>
+        </aside>
       </div>
     </div>
   )

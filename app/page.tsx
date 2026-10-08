@@ -1,14 +1,15 @@
 import { REPO_URL, getTelemetry, resolveDownload } from '@/lib/github'
+import { getNewPageShelves } from '@/lib/apple-music'
+import { getLrcRedLyrics } from '@/lib/lrc-red'
+import { DEMO_TRACK, excerpt, placeholderLyrics } from '@/lib/lyrics-demo'
 import { MIN_ANDROID, SITE_NAME, SITE_URL } from '@/lib/site'
-import { TelemetryProvider } from '@/components/telemetry-provider'
-import { Backdrop } from '@/components/site/backdrop'
 import { Nav } from '@/components/site/nav'
-import { Hero } from '@/components/site/hero'
-import { Metrics } from '@/components/site/metrics'
-import { Features } from '@/components/site/features'
-import { Changelog } from '@/components/site/changelog'
-import { Install } from '@/components/site/install'
+import { MediaRow } from '@/components/site/media-row'
+import { PhoneHero } from '@/components/site/phone-hero'
+import { Integrations } from '@/components/site/integrations'
+import { ReplaySection, replayCards } from '@/components/site/replay-section'
 import { Footer } from '@/components/site/footer'
+import { ClosingCta } from '@/components/site/closing-cta'
 
 /**
  * Revalidate the whole page every 5 minutes so star counts and new releases
@@ -17,9 +18,14 @@ import { Footer } from '@/components/site/footer'
 export const revalidate = 300
 
 export default async function Page() {
-  // Fetched here, on the server, so the hero paints with the real tag and star
-  // count on the first frame — no skeleton flash for the common case.
-  const telemetry = await getTelemetry()
+  // Telemetry feeds the download links and the structured data below.
+  const [telemetry, shelves, song] = await Promise.all([
+    getTelemetry(),
+    getNewPageShelves(),
+    getLrcRedLyrics(DEMO_TRACK.isrc),
+  ])
+  // Live lyrics from lrc.red; original placeholder lines if it is unreachable.
+  const lyrics = song ? excerpt(song) : placeholderLyrics()
 
   const download = resolveDownload(telemetry.latest)
 
@@ -74,7 +80,7 @@ export default async function Page() {
   }
 
   return (
-    <TelemetryProvider initial={telemetry}>
+    <>
       {/* Emitted server-side so crawlers see it in the initial HTML. */}
       <script
         type="application/ld+json"
@@ -82,18 +88,29 @@ export default async function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify([siteSchema, appSchema]) }}
       />
 
-      <Backdrop />
       <Nav />
 
       <main id="main-content">
-        <Hero />
-        <Metrics />
-        <Features />
-        <Changelog />
-        <Install />
+        <PhoneHero
+          lyrics={lyrics}
+          tag={telemetry.latest?.tag ?? null}
+          download={download}
+          stars={telemetry.repo?.stars ?? null}
+          totalDownloads={telemetry.totalDownloads}
+        />
+        <Integrations />
+        <ReplaySection cards={replayCards(shelves)} />
+        <MediaRow title="Best New Songs" items={shelves.bestNewSongs} variant="tracks" eager />
+        <MediaRow title="New This Week" items={shelves.newThisWeek} />
+        <MediaRow title="Recent Releases" items={shelves.recentReleases} />
+        <ClosingCta
+          tag={telemetry.latest?.tag ?? null}
+          download={download}
+          stars={telemetry.repo?.stars ?? null}
+        />
       </main>
 
-      <Footer />
-    </TelemetryProvider>
+      <Footer stars={telemetry.repo?.stars ?? null} />
+    </>
   )
 }

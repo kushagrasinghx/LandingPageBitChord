@@ -1,169 +1,84 @@
-'use client'
-
-import { ArrowUpRight, Bug, Github, Heart, Scale, Star } from 'lucide-react'
+import Link from 'next/link'
+import { Star } from 'lucide-react'
 import { LogoWordmark } from '@/components/ui/logo'
-import { LiveMetric } from '@/components/ui/live-metric'
-import { Reveal } from '@/components/ui/reveal'
-import { useTelemetry } from '@/components/telemetry-provider'
-import { ISSUES_URL, RELEASES_URL, REPO_URL } from '@/lib/github'
+import { RELEASES_URL, REPO_URL } from '@/lib/github'
 
-const COLUMNS = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Features', href: '#features' },
-      { label: 'Audio Engine', href: '#audio-engine' },
-      { label: 'Releases', href: '#releases' },
-      { label: 'Install guide', href: '#install' },
-    ],
-  },
-  {
-    title: 'Project',
-    links: [
-      { label: 'Source on GitHub', href: REPO_URL, external: true },
-      { label: 'All releases', href: RELEASES_URL, external: true },
-      { label: 'Issue tracker', href: ISSUES_URL, external: true },
-      { label: 'GPL-3.0 license', href: `${REPO_URL}/blob/main/LICENSE`, external: true },
-    ],
-  },
-  {
-    title: 'Support',
-    links: [
-      { label: 'Discord', href: 'https://discord.gg/pSafNTyKZx', external: true },
-      { label: 'Ko-fi', href: 'https://ko-fi.com/kushagrasinghx', external: true },
-      { label: 'PayPal', href: 'https://paypal.me/kuxhagrasingh', external: true },
-      { label: '@kushagrasinghx', href: 'https://github.com/kushagrasinghx', external: true },
-    ],
-  },
-] as const
+const PROFILE_URL = 'https://github.com/kushagrasinghx'
 
-export function Footer() {
-  const { data } = useTelemetry()
-  const stars = data?.repo?.stars ?? null
-  const year = 2026
+type FooterLink = { label: string; href: string; external?: boolean; star?: boolean }
+
+/**
+ * Minimal site footer: logo and a single row of text links, the legal fine
+ * print, and a sign-off.
+ */
+export function Footer({ stars }: { stars: number | null }) {
+  const links: FooterLink[] = [
+    {
+      label: stars !== null ? `Star this repo (${stars.toLocaleString('en-US')})` : 'Star this repo',
+      href: REPO_URL,
+      external: true,
+      star: true,
+    },
+    { label: 'Releases', href: RELEASES_URL, external: true },
+    { label: 'GitHub', href: REPO_URL, external: true },
+    { label: 'Addon Docs', href: '/docs' },
+    { label: 'Discord', href: 'https://discord.gg/pSafNTyKZx', external: true },
+    { label: 'Ko-fi', href: 'https://ko-fi.com/kushagrasinghx', external: true },
+    { label: 'PayPal', href: 'https://paypal.me/kuxhagrasingh', external: true },
+    { label: 'GPL-3.0', href: `${REPO_URL}/blob/main/LICENSE`, external: true },
+  ]
 
   return (
-    <footer className="relative mt-8 border-t border-line px-6 pb-10 pt-16">
-      {/* Ambient wash so the page doesn't just stop. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 opacity-50"
-        style={{
-          background:
-            'radial-gradient(70% 100% at 50% 100%, rgba(255,255,255,0.09), transparent 70%)',
-        }}
-      />
+    <footer className="mt-20 border-t-[0.8px] border-white/10">
+      <div className="page-container pb-12 pt-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <Link href="#top" aria-label="BitChord home" className="inline-flex w-fit">
+            {/* -my-2 absorbs the artwork's transparent padding; see LogoWordmark. */}
+            <LogoWordmark className="-my-2 h-8" />
+          </Link>
 
-      <div className="mx-auto max-w-6xl">
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-          {/* Brand */}
-          <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-1">
-            <div className="flex items-center">
-              <LogoWordmark className="-my-2 h-[52px]" />
-            </div>
-
-            <p className="max-w-xs text-pretty text-[13px] leading-relaxed text-white/40">
-              An aesthetic, open-source YouTube Music client with beat-matched Automix,
-              character-synced lyrics and a monthly Replay. Free forever.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center gap-2 rounded-full glass px-3 py-1.5 text-[12.5px] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
-              >
-                <Github className="size-3.5" aria-hidden />
-                Star
-                <span className="inline-flex items-center gap-1 font-mono text-[11.5px] text-white/70">
-                  <Star className="size-2.5 fill-white/70" aria-hidden />
-                  <LiveMetric value={stars} digits={3} separator={false} />
-                </span>
-              </a>
-
-              <a
-                href={ISSUES_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-[12.5px] text-white/60 transition-colors hover:bg-white/[0.07] hover:text-white"
-              >
-                <Bug className="size-3.5" aria-hidden />
-                Report a bug
-              </a>
-            </div>
-          </div>
-
-          {/* Link columns */}
-          {COLUMNS.map((col) => (
-            <nav key={col.title} aria-label={col.title} className="flex flex-col gap-3">
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/30">
-                {col.title}
-              </p>
-              <ul className="flex flex-col gap-2.5">
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      {...('external' in link && link.external
-                        ? { target: '_blank', rel: 'noopener noreferrer' }
-                        : {})}
-                      className="group inline-flex items-center gap-1 text-[13px] text-white/45 transition-colors hover:text-white"
-                    >
-                      {link.label}
-                      {'external' in link && link.external ? (
-                        <ArrowUpRight
-                          className="size-3 opacity-0 transition-all duration-300 group-hover:opacity-60"
-                          aria-hidden
-                        />
-                      ) : null}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+          <nav aria-label="Footer">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[13px]">
+              {links.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className="inline-flex items-center gap-1.5 text-white/50 transition-colors hover:text-white"
+                  >
+                    {link.star ? <Star className="size-3.5" aria-hidden /> : null}
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
-        {/* Legal */}
-        <Reveal delay={0.05}>
-          <div className="mt-14 flex flex-col gap-5 border-t border-line pt-7">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-white/30">
-              <span className="inline-flex items-center gap-1.5">
-                <Scale className="size-3" aria-hidden />
-                GPL-3.0 · copyleft
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Heart className="size-3 text-white/45" aria-hidden />
-                Built by{' '}
-                <a
-                  href="https://github.com/kushagrasinghx"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/55 underline decoration-white/20 underline-offset-2 transition-colors hover:text-white"
-                >
-                  @kushagrasinghx
-                </a>
-              </span>
-              <span>© {year} BitChord</span>
-            </div>
+        <div className="mt-6 max-w-[760px] space-y-2 text-[12px] leading-[18px] text-white/40">
+          <p>
+            BitChord is not affiliated with, endorsed by, or connected to YouTube or Google in any
+            way. Use it at your own discretion.
+          </p>
+          <p>
+            The album artwork, titles and artist names shown on this site are taken from publicly
+            available Apple Music pages and are displayed for illustration only. All of it remains
+            the property of Apple and the respective artists, labels and rights holders. BitChord
+            does not own this content and is not affiliated with Apple.
+          </p>
+        </div>
 
-            <p className="max-w-4xl text-pretty text-[11.5px] leading-relaxed text-white/25">
-              Independent, non-commercial project. Not affiliated with, endorsed by, or connected to
-              YouTube, Google LLC, or any of their parent companies. BitChord does
-              not host, upload, or store copyrighted media — it acts strictly as an interface to
-              local device storage and public or user-authenticated APIs. You are responsible for
-              ensuring your use complies with local copyright law and the terms of service of any
-              platform you connect to. Distributed under the GNU General Public License v3.0; any
-              redistribution must include the corresponding source under the same license.
-            </p>
-
-            <p className="text-[11px] text-white/20">
-              Repository metrics on this page are fetched live from the GitHub REST API and cached
-              for five minutes.
-            </p>
-          </div>
-        </Reveal>
+        <p className="mt-6 text-[12px] italic text-white/50">
+          Built by <span role="img" aria-label="love">❤️</span> by{' '}
+          <a
+            href={PROFILE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+          >
+            @kushagrasinghx
+          </a>
+        </p>
       </div>
     </footer>
   )

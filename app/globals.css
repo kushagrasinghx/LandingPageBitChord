@@ -297,9 +297,48 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
 }
 
+/* The one page column: every section sits inside it, so edges always line up. */
+@utility page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility mask-fade-x {
   mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* The hero's mesh gradient: each colour field drifts on its own loop, on its
+   own compositor layer, and stops while the hero is off screen. */
+.mesh-blob {
+  will-change: transform;
+}
+[data-paused] .mesh-blob {
+  animation-play-state: paused;
+}
+@keyframes mesh-drift-a {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(14%, 10%) scale(1.12); }
+  100% { transform: translate(-8%, 16%) scale(0.94); }
+}
+@keyframes mesh-drift-b {
+  0% { transform: translate(0, 0) scale(1.05); }
+  50% { transform: translate(-16%, 8%) scale(0.92); }
+  100% { transform: translate(-6%, -12%) scale(1.1); }
+}
+@keyframes mesh-drift-c {
+  0% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(18%, -10%) scale(1.08); }
+  100% { transform: translate(8%, 12%) scale(1); }
 }
 
 /* Respect reduced-motion for the decorative layer. Framer Motion handles its own

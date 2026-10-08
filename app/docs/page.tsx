@@ -1,13 +1,5 @@
 import type { Metadata } from 'next'
-import { DM_Sans } from 'next/font/google'
 import { DocsPage } from '@/components/docs/docs-page'
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-docs',
-  weight: ['400', '500', '600', '700'],
-})
 
 export const metadata: Metadata = {
   title: 'Addon developer guide',
@@ -17,9 +9,6 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-  return (
-    <div className={dmSans.variable}>
-      <DocsPage />
-    </div>
-  )
+  // Inter and JetBrains Mono come from the root layout; no extra font here.
+  return <DocsPage />
 }

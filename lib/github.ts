@@ -42,6 +42,11 @@ export type Release = {
   htmlUrl: string
   /** The `.apk` asset, when the release ships one. */
   apk: ReleaseAsset | null
+  /**
+   * Downloads of every asset on the release — all APK splits plus the desktop
+   * builds — so the site total matches GitHub's own (and the README badge).
+   */
+  downloadCount: number
   /** Bullet lines parsed out of the release body for the timeline. */
   highlights: string[]
 }
@@ -204,6 +209,7 @@ function normalizeRelease(raw: RawRelease): Release {
           downloadCount: apkRaw.download_count ?? 0,
         }
       : null,
+    downloadCount: assets.reduce((sum, a) => sum + (a.download_count ?? 0), 0),
     highlights: parseHighlights(body),
   }
 }
@@ -245,7 +251,7 @@ export async function getTelemetry(): Promise<Telemetry> {
     return bt - at
   })
 
-  const totalDownloads = releases.reduce((sum, r) => sum + (r.apk?.downloadCount ?? 0), 0)
+  const totalDownloads = releases.reduce((sum, r) => sum + r.downloadCount, 0)
 
   return {
     repo,

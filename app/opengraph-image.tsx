@@ -1,87 +1,54 @@
 import { ImageResponse } from 'next/og'
+import { OG_SIZE, OgFrame, OgPill, ogFonts, ogLogo } from '@/lib/og'
 
-export const alt = 'BitChord — the open-source YouTube Music client for Android'
-export const size = { width: 1200, height: 630 }
+export const alt = 'BitChord — Instant Stream. No Compromise.'
+export const size = OG_SIZE
 export const contentType = 'image/png'
 
+const TAGLINE = 'A modern YouTube music client with clean aesthetics inspired from Apple Music'
+const PLATFORMS = 'Android · Windows · Linux · macOS'
+
 /**
- * Social card, generated at build time rather than shipped as a binary.
- *
- * Deliberately plain: link previews are rendered at thumbnail size in a feed,
- * so anything smaller than the headline is unreadable and only adds noise. The
- * grid echoes the page's own backdrop so the card and the destination read as
- * the same surface.
+ * The site's link preview, in the current hero's language: the two-tone
+ * headline, the tagline from the closing section, and the same two buttons.
+ * Generated at build time rather than shipped as a binary.
  */
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  const [fonts, logo] = await Promise.all([
+    ogFonts(`Instant Stream. No Compromise.${TAGLINE}Download the appStar on GitHub${PLATFORMS}BitChord`),
+    ogLogo(),
+  ])
+
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          background: '#000',
-          backgroundImage:
-            'linear-gradient(to right, rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.07) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-          padding: '0 88px',
-          color: '#fff',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            fontSize: 26,
-            letterSpacing: 6,
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.45)',
-          }}
-        >
-          BitChord
+      <OgFrame logo={logo} corner={PLATFORMS}>
+        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', fontSize: 84, fontWeight: 800, letterSpacing: -3, lineHeight: 1.02 }}>
+            <span>Instant Stream.</span>
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>No Compromise.</span>
+          </div>
+          <div style={{ display: 'flex', marginTop: 22, maxWidth: 820, fontSize: 30, fontWeight: 500, lineHeight: 1.35, color: 'rgba(255,255,255,0.62)' }}>
+            {TAGLINE}
+          </div>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            marginTop: 24,
-            fontSize: 92,
-            fontWeight: 800,
-            letterSpacing: -4,
-            lineHeight: 1.04,
-          }}
-        >
-          <span>Instant Stream.</span>
-          <span style={{ color: 'rgba(255,255,255,0.45)' }}>No Compromise.</span>
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 40 }}>
+          <OgPill solid>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 12 }}>
+              <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+            </svg>
+            Download the app
+          </OgPill>
+          <div style={{ display: 'flex', width: 14 }} />
+          <OgPill>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinejoin="round" style={{ marginRight: 12 }}>
+              <path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z" />
+            </svg>
+            Star on GitHub
+          </OgPill>
         </div>
-
-        <div
-          style={{
-            display: 'flex',
-            marginTop: 34,
-            fontSize: 30,
-            color: 'rgba(255,255,255,0.62)',
-          }}
-        >
-          The open-source YouTube Music client for people who actually listen.
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            marginTop: 44,
-            fontSize: 22,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.35)',
-          }}
-        >
-          Android · Free · GPL-3.0 · No ads · No tracking
-        </div>
-      </div>
+      </OgFrame>
     ),
-    size,
+    { ...size, fonts },
   )
 }

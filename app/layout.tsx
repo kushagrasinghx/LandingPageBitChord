@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
+import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { SITE_URL } from '@/lib/site'
 
@@ -10,6 +10,19 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ['400', '500', '600', '700', '800'],
 })
 
+/**
+ * The docs page's typeface, and the stand-in for SF Pro Display (the BitChord
+ * app's typeface) on the hero's phone screen. SF Pro itself is only used where
+ * the OS provides it (Apple devices); its license does not allow serving it as
+ * a web font.
+ */
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800'],
+})
+
 const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
@@ -17,7 +30,7 @@ const jetbrains = JetBrains_Mono({
   weight: ['400', '500', '600'],
 })
 
-const TITLE = 'BitChord — Instant Stream. No Compromise.'
+const TITLE = 'BitChord - Aesthetic Music Streaming'
 const DESCRIPTION =
   'The open-source YouTube Music client for Android. Beat-matched Automix, character-synced lyrics, Discord Rich Presence and a monthly Replay of everything you played. Free, GPLv3, no ads, no tracking.'
 
@@ -36,6 +49,7 @@ export const metadata: Metadata = {
   category: 'music',
   keywords: [
     'BitChord',
+    'aesthetic music streaming',
     'YouTube Music client',
     'Android music player',
     'open source music player',
@@ -79,15 +93,10 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     creator: '@kushagrasinghx',
   },
-  icons: {
-    // `public/LogoTransparent.png` is misnamed — its bytes are an SVG, not a
-    // PNG. Serving it as `image/png` is why no favicon rendered at all:
-    // browsers trust the declared type and fail to decode. `favicon.svg` is
-    // that same artwork under the right extension, plus a media query that
-    // flips the white mark to black on a light tab strip so it stays visible
-    // without giving it an opaque plate.
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-  },
+  // Icons come from the file conventions in `app/`: `favicon.ico` (16/32/48,
+  // served at the root where Google's favicon crawler always looks),
+  // `icon.svg` and `apple-icon.png`. Next emits their <link> tags with a
+  // content hash in the URL, so replacing the artwork busts every cache.
 }
 
 export const viewport: Viewport = {
@@ -97,7 +106,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${jakarta.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="antialiased">
         <a
           href="#main-content"
