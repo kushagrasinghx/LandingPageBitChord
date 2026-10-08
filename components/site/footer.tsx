@@ -69,7 +69,7 @@ export function Footer({ stars }: { stars: number | null }) {
         </div>
 
         <p className="mt-6 text-[12px] italic text-white/50">
-          Built by <span role="img" aria-label="love">❤️</span> by{' '}
+          Built with <span role="img" aria-label="love">❤️</span> by{' '}
           <a
             href={PROFILE_URL}
             target="_blank"
