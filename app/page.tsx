@@ -8,6 +8,7 @@ import { MediaRow } from '@/components/site/media-row'
 import { PhoneHero } from '@/components/site/phone-hero'
 import { Integrations } from '@/components/site/integrations'
 import { ReplaySection, replayCards } from '@/components/site/replay-section'
+import { TvSection } from '@/components/site/tv-section'
 import { Footer } from '@/components/site/footer'
 import { ClosingCta } from '@/components/site/closing-cta'
 
@@ -100,6 +101,7 @@ export default async function Page() {
         />
         <Integrations />
         <ReplaySection cards={replayCards(shelves)} />
+        <TvSection release={telemetry.latest} />
         <MediaRow title="Best New Songs" items={shelves.bestNewSongs} variant="tracks" eager />
         <MediaRow title="New This Week" items={shelves.newThisWeek} />
         <MediaRow title="Recent Releases" items={shelves.recentReleases} />

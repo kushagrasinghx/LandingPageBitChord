@@ -42,6 +42,8 @@ export type Release = {
   htmlUrl: string
   /** The `.apk` asset, when the release ships one. */
   apk: ReleaseAsset | null
+  /** The universal BitChordTV `.apk` (not an ABI split), when shipped. */
+  tvApk: ReleaseAsset | null
   /**
    * Downloads of every asset on the release — all APK splits plus the desktop
    * builds — so the site total matches GitHub's own (and the README badge).
@@ -190,7 +192,21 @@ function parseHighlights(body: string, limit = 4): string[] {
 
 function normalizeRelease(raw: RawRelease): Release {
   const assets = raw.assets ?? []
-  const apkRaw = assets.find((a) => a.name?.toLowerCase().endsWith('.apk'))
+  const isTv = (a: RawAsset) => /^bitchordtv/i.test(a.name ?? '')
+  const apkRaw = assets.find((a) => a.name?.toLowerCase().endsWith('.apk') && !isTv(a))
+  // Universal build = the TV apk without an ABI suffix (arm64-v8a, x86_64, ...).
+  const tvRaw = assets.find(
+    (a) => isTv(a) && /\.apk$/i.test(a.name ?? '') && !/_(arm64-v8a|armeabi-v7a|x86_64|x86)\.apk$/i.test(a.name ?? ''),
+  )
+  const toAsset = (a: RawAsset | undefined, fallback: string): ReleaseAsset | null =>
+    a?.browser_download_url
+      ? {
+          name: a.name ?? fallback,
+          size: a.size ?? 0,
+          downloadUrl: a.browser_download_url,
+          downloadCount: a.download_count ?? 0,
+        }
+      : null
   const body = raw.body ?? ''
   const tag = raw.tag_name ?? 'unknown'
 
@@ -201,14 +217,8 @@ function normalizeRelease(raw: RawRelease): Release {
     prerelease: Boolean(raw.prerelease),
     body,
     htmlUrl: raw.html_url ?? `${RELEASES_URL}/tag/${tag}`,
-    apk: apkRaw?.browser_download_url
-      ? {
-          name: apkRaw.name ?? 'BitChord.apk',
-          size: apkRaw.size ?? 0,
-          downloadUrl: apkRaw.browser_download_url,
-          downloadCount: apkRaw.download_count ?? 0,
-        }
-      : null,
+    apk: toAsset(apkRaw, 'BitChord.apk'),
+    tvApk: toAsset(tvRaw, 'BitChordTV.apk'),
     downloadCount: assets.reduce((sum, a) => sum + (a.download_count ?? 0), 0),
     highlights: parseHighlights(body),
   }
