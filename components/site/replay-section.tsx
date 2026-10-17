@@ -3,10 +3,10 @@ import type { ReplayCardData } from '@/components/ui/replay-card'
 import { DEMO_TRACK } from '@/lib/lyrics-demo'
 import { artworkUrl, type MediaItem } from '@/lib/media'
 
-/** Same-origin artwork, so the card can read its pixels for the mesh palette. */
+/** Card artwork. Apple's CDN sends CORS headers, so the card can read its pixels for the mesh palette. */
 function sameOrigin(item: MediaItem | undefined): string {
   if (!item) return DEMO_TRACK.artwork
-  return `/_next/image?url=${encodeURIComponent(artworkUrl(item.artwork, 300))}&w=256&q=75`
+  return artworkUrl(item.artwork, 256)
 }
 
 const plays = (n: number) => `${n.toLocaleString('en-US')} Plays`

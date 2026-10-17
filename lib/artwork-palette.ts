@@ -165,12 +165,14 @@ export const FALLBACK_MESH = meshColors(FALLBACK.map(fromHex))
 
 const cache = new Map<string, Promise<MeshColors>>()
 
-/** The mesh colours for an image; it must be same-origin (a /_next/image URL or /public file). */
+/** The mesh colours for an image; it must be same-origin or served with CORS (Apple's CDN is). */
 export function artworkMesh(src: string): Promise<MeshColors> {
   let hit = cache.get(src)
   if (!hit) {
     hit = new Promise<MeshColors>((resolve) => {
       const img = new Image()
+      // Without this a cross-origin cover taints the canvas and getImageData throws.
+      img.crossOrigin = 'anonymous'
       img.decoding = 'async'
       img.onload = () => {
         try {
