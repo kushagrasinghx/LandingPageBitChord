@@ -9,15 +9,13 @@
  * part's end. Translation / romanization spans are skipped. The answering-vocal role (x-bg) is dropped: the hero's screen
  * draws the lead only.
  *
- * Lyrics are fetched at request time and never stored in this repository.
- * Like the other fetchers on this site, this resolves — never throws — and
- * the caller falls back to placeholder lines when it gets null.
+ * The TTML is downloaded once per build by scripts/fetch-lyrics.mjs into
+ * lib/generated/lyrics.json (gitignored, never committed) and bundled, so the
+ * Worker does not call lrc.red at request time. The caller falls back to
+ * placeholder lines when it gets null.
  */
 
-const BASE = 'https://lrc.red/'
-
-/** A day: published timings for a released song do not change. */
-const REVALIDATE_SECONDS = 86_400
+import bundled from '@/lib/generated/lyrics.json'
 
 export type SourceWord = { text: string; startMs: number; endMs: number }
 export type SourceLine = { timeMs: number; words: SourceWord[] }
@@ -130,16 +128,10 @@ export function parseTtml(ttml: string): SourceLine[] {
   return lines.sort((a, b) => a.timeMs - b.timeMs)
 }
 
-/** The lead vocal of the track with this ISRC, or null if lrc.red has nothing usable. */
-export async function getLrcRedLyrics(isrc: string): Promise<SourceLine[] | null> {
-  try {
-    const res = await fetch(`${BASE}s/${isrc.trim().toUpperCase()}.ttml`, {
-      next: { revalidate: REVALIDATE_SECONDS },
-    })
-    if (!res.ok) return null
-    const lines = parseTtml(await res.text())
-    return lines.length ? lines : null
-  } catch {
-    return null
-  }
+/** The bundled lead vocal for this ISRC, or null if the build could not fetch it. */
+export function getLrcRedLyrics(isrc: string): SourceLine[] | null {
+  const { isrc: saved, ttml } = bundled as { isrc: string; ttml: string | null }
+  if (!ttml || saved !== isrc.trim().toUpperCase()) return null
+  const lines = parseTtml(ttml)
+  return lines.length ? lines : null
 }

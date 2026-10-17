@@ -20,12 +20,9 @@ export const revalidate = 300
 
 export default async function Page() {
   // Telemetry feeds the download links and the structured data below.
-  const [telemetry, shelves, song] = await Promise.all([
-    getTelemetry(),
-    getNewPageShelves(),
-    getLrcRedLyrics(DEMO_TRACK.isrc),
-  ])
-  // Live lyrics from lrc.red; original placeholder lines if it is unreachable.
+  const [telemetry, shelves] = await Promise.all([getTelemetry(), getNewPageShelves()])
+  // lrc.red lyrics bundled at build time; original placeholder lines if the build could not fetch them.
+  const song = getLrcRedLyrics(DEMO_TRACK.isrc)
   const lyrics = song ? excerpt(song) : placeholderLyrics()
 
   const download = resolveDownload(telemetry.latest)

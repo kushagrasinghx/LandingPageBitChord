@@ -3,8 +3,8 @@ import type { SourceLine } from '@/lib/lrc-red'
 /**
  * The track shown on the hero's phone screen.
  *
- * Its lyrics are fetched from lrc.red at request time (see lib/lrc-red.ts) and
- * are never stored in this repository. Only if that fetch fails does the
+ * Its lyrics are fetched from lrc.red once per build (scripts/fetch-lyrics.mjs)
+ * and are never stored in this repository. Only if that fetch fails does the
  * screen fall back to the original placeholder lines below.
  */
 export const DEMO_TRACK = {
@@ -13,7 +13,7 @@ export const DEMO_TRACK = {
   album: 'Parachutes',
   artwork: '/albums/coldplay-parachutes.png',
   explicit: false,
-  /** Parachutes (2000) release, as listed by lrc.red. */
+  /** Parachutes (2000) release, as listed by lrc.red. Keep in sync with scripts/fetch-lyrics.mjs. */
   isrc: 'GBAYE0000267',
 } as const
 

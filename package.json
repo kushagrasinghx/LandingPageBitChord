@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "fetch-lyrics": "node scripts/fetch-lyrics.mjs",
+    "predev": "node scripts/fetch-lyrics.mjs",
     "dev": "next dev -p 3100",
+    "prebuild": "node scripts/fetch-lyrics.mjs",
     "build": "next build",
     "start": "next start -p 3100",
+    "pretypecheck": "node scripts/fetch-lyrics.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "build:cf": "opennextjs-cloudflare build",
