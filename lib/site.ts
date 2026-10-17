@@ -33,3 +33,6 @@ export const SITE_NAME = 'BitChord'
 
 /** Minimum Android release the APK installs on, quoted in the app schema. */
 export const MIN_ANDROID = '8.0'
+
+/** BitChord Web, the in-browser player offered to desktop visitors. */
+export const WEB_APP_URL = 'https://bitchord-8bw.pages.dev/'

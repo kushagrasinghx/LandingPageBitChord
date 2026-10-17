@@ -125,7 +125,7 @@ export function PhoneHero({
           </h1>
 
           <div className="mt-7">
-            <DownloadButtons tag={tag} download={download} stars={stars} />
+            <DownloadButtons tag={tag} download={download} stars={stars} web />
           </div>
 
           {/* Each part is left out rather than shown as "0" when its source failed. */}

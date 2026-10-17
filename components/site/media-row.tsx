@@ -7,6 +7,8 @@ import { REPO_URL } from '@/lib/github'
 import { ArrowButton } from '@/components/ui/arrow-button'
 import { ExplicitBadge } from '@/components/ui/explicit-badge'
 import { artworkUrl, type MediaItem } from '@/lib/media'
+import { WEB_APP_URL } from '@/lib/site'
+import { useIsDesktop } from '@/lib/use-desktop'
 import { cn } from '@/lib/utils'
 
 /**
@@ -32,8 +34,9 @@ const TRACKS_PER_COLUMN = 4
  * - `tracks`: columns of four compact song rows — 40px cover, title, artist,
  *   hairline divider — as in Apple's "Best New Songs".
  *
- * Every tile links to the BitChord repository — the music is a showcase of
- * what you can listen to, and the repo is where you go to get the app.
+ * Every tile links to BitChord Web on a desktop computer and to the BitChord
+ * repository elsewhere — the music is a showcase of what you can listen to,
+ * and those are where you go to start listening.
  *
  * Touch and trackpad users scroll natively; the arrow buttons exist for mouse
  * users, who otherwise have no obvious way to move a row sideways.
@@ -53,6 +56,9 @@ export function MediaRow({
   const trackRef = useRef<HTMLUListElement>(null)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
+  // Desktop visitors can play straight away in BitChord Web; everyone else
+  // gets the repo, where the app downloads are.
+  const desktop = useIsDesktop()
 
   const updateEdges = useCallback(() => {
     const el = trackRef.current
@@ -116,13 +122,14 @@ export function MediaRow({
                     item={item}
                     last={i === column.length - 1}
                     eager={eager && c < 3}
+                    desktop={desktop}
                   />
                 ))}
               </li>
             ))
           : items.map((item, i) => (
               <li key={item.id} className="w-40 shrink-0 snap-start sm:w-48 lg:w-52">
-                <Tile item={item} eager={eager && i < 6} />
+                <Tile item={item} eager={eager && i < 6} desktop={desktop} />
               </li>
             ))}
       </ul>
@@ -130,19 +137,19 @@ export function MediaRow({
   )
 }
 
-function linkProps(item: MediaItem) {
+function linkProps(item: MediaItem, desktop: boolean) {
   return {
-    href: REPO_URL,
+    href: desktop ? WEB_APP_URL : REPO_URL,
     target: '_blank',
     rel: 'noopener noreferrer',
-    'aria-label': `${item.title}${item.explicit ? ' (Explicit)' : ''} by ${item.subtitle} — open BitChord on GitHub`,
+    'aria-label': `${item.title}${item.explicit ? ' (Explicit)' : ''} by ${item.subtitle} — ${desktop ? 'open BitChord Web' : 'open BitChord on GitHub'}`,
   }
 }
 
 /** A large square cover with title and artist underneath. */
-function Tile({ item, eager }: { item: MediaItem; eager: boolean }) {
+function Tile({ item, eager, desktop }: { item: MediaItem; eager: boolean; desktop: boolean }) {
   return (
-    <a {...linkProps(item)} className="group block focus-visible:outline-none">
+    <a {...linkProps(item, desktop)} className="group block focus-visible:outline-none">
       {/* Apple Music-style hairline: a thin inset edge drawn
           over the artwork (::after), so it reads on dark covers too. */}
       <div className="relative aspect-square overflow-hidden rounded-xl bg-white/[0.04] group-focus-visible:ring-2 group-focus-visible:ring-white/70 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_0.75px_rgb(255_255_255/0.32)] after:transition-shadow after:duration-300 group-hover:after:shadow-[inset_0_0_0_0.75px_rgb(255_255_255/0.5)]">
@@ -169,10 +176,20 @@ function Tile({ item, eager }: { item: MediaItem; eager: boolean }) {
  * 40px cover with 5px corners, 13px title, 12px artist, and a hairline
  * divider under the text on every row but the last in its column.
  */
-function TrackRow({ item, last, eager }: { item: MediaItem; last: boolean; eager: boolean }) {
+function TrackRow({
+  item,
+  last,
+  eager,
+  desktop,
+}: {
+  item: MediaItem
+  last: boolean
+  eager: boolean
+  desktop: boolean
+}) {
   return (
     <a
-      {...linkProps(item)}
+      {...linkProps(item, desktop)}
       className="group flex h-[55px] items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
     >
       <div className="relative size-10 shrink-0 overflow-hidden rounded-[5px] bg-white/[0.04] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_0.75px_rgb(255_255_255/0.32)]">

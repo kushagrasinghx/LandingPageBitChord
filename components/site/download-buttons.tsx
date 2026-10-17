@@ -1,5 +1,8 @@
 import { ArrowDownToLine, Star } from 'lucide-react'
+import { LogoMark } from '@/components/ui/logo'
 import { REPO_URL, type resolveDownload } from '@/lib/github'
+import { WEB_APP_URL } from '@/lib/site'
+import { cn } from '@/lib/utils'
 
 /**
  * The page's two calls to action — download the latest build, star the repo —
@@ -7,18 +10,40 @@ import { REPO_URL, type resolveDownload } from '@/lib/github'
  *
  * Hover is a highlight, not a zoom: the solid button brightens and gains a
  * soft white glow, the outlined one fills faintly and its edge brightens.
+ *
+ * With `web`, desktop visitors get "BitChord Web" in place of the download;
+ * everyone else still sees the download.
  */
 export function DownloadButtons({
   tag,
   download,
   stars,
+  web = false,
 }: {
   tag: string | null
   download: ReturnType<typeof resolveDownload>
   stars: number | null
+  web?: boolean
 }) {
+  const solid =
+    'group h-11 items-center gap-2 rounded-full bg-white/90 px-5 text-[14px] font-semibold text-black transition-[background-color,box-shadow] duration-300 hover:bg-white hover:shadow-[0_0_24px_rgb(255_255_255/0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
+
   return (
     <div className="flex flex-wrap items-center justify-center gap-3">
+      {web ? (
+        <a
+          href={WEB_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open BitChord Web"
+          className={cn(solid, 'hidden desktop:inline-flex')}
+        >
+          {/* The mark is white artwork; invert it to ink on the white button. */}
+          <LogoMark className="w-5 invert" />
+          BitChord Web
+        </a>
+      ) : null}
+
       <a
         href={download.url}
         target="_blank"
@@ -29,7 +54,7 @@ export function DownloadButtons({
             ? `Download BitChord ${tag ?? 'latest'}, ${download.size}`
             : 'View the latest BitChord release on GitHub'
         }
-        className="group inline-flex h-11 items-center gap-2 rounded-full bg-white/90 px-5 text-[14px] font-semibold text-black transition-[background-color,box-shadow] duration-300 hover:bg-white hover:shadow-[0_0_24px_rgb(255_255_255/0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        className={cn(solid, 'inline-flex', web && 'desktop:hidden')}
       >
         <ArrowDownToLine
           className="size-4 transition-transform duration-300 group-hover:translate-y-0.5"

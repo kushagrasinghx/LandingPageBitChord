@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* A desktop computer: a wide screen driven by a mouse. Width alone would also
+   catch landscape tablets, which should still be offered the download. */
+@custom-variant desktop (@media (min-width: 1024px) and (hover: hover) and (pointer: fine));
+
 /* ---------------------------------------------------------------------------
    Design tokens
 
