@@ -7,8 +7,16 @@ import { LogoWordmark } from '@/components/ui/logo'
 
 const GITHUB_REPOSITORY = 'https://github.com/kushagrasinghx/BitChord/'
 
-export function InviteFallback({ code }: { code: string }) {
+export function InviteFallback({ code, server }: { code: string; server?: string }) {
   const [copied, setCopied] = useState(false)
+
+  // The app's own link: the scheme the app registers for invites, carrying
+  // the code and the server that holds the party. A link that opens the
+  // browser leaves the listener copying a code into another app by hand,
+  // and the server the code belongs to is the part that gets left behind.
+  const appUrl = server
+    ? `bitchord://party/${code}?server=${encodeURIComponent(server)}`
+    : `bitchord://party/${code}`
 
   async function copyCode() {
     try {
@@ -83,11 +91,17 @@ export function InviteFallback({ code }: { code: string }) {
             </div>
 
             <div className="px-2 pb-2 pt-6 text-center sm:px-4">
-              <p className="text-sm leading-6 text-white/55">
+              <a
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-black transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                href={appUrl}
+              >
+                Open in BitChord
+              </a>
+              <p className="mt-4 text-sm leading-6 text-white/55">
                 Looks like BitChord is not installed on your device.
               </p>
               <a
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-black transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.12]"
                 href={GITHUB_REPOSITORY}
                 target="_blank"
                 rel="noopener noreferrer"
