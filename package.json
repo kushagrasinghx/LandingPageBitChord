@@ -17,11 +17,11 @@
     "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.20.12",
+    "@opennextjs/cloudflare": "^1.20.15",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.469.0",
-    "next": "^15.5.4",
+    "next": "^16.4.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^2.6.0"
