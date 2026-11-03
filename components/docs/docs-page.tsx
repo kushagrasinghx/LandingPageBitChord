@@ -195,6 +195,38 @@ GET /stream/dolby_8f31?quality=lossless&atmos=auto
   "encrypted": false
 }`
 
+const qualityOptionsCode = `// manifest.json — a quality select, best option first:
+{
+  "id": "dev.example.hires-addon",
+  "name": "Hi-Res Addon",
+  "resources": ["search", "stream"],
+  "settings": [
+    {
+      "key": "quality",
+      "type": "select",
+      "label": "Audio quality",
+      "default": "max",
+      "options": [
+        { "value": "max", "label": "Max (best available)" },
+        { "value": "hires", "label": "Hi-Res (up to 24-bit / 192 kHz FLAC)" },
+        { "value": "lossless", "label": "CD (16-bit / 44.1 kHz FLAC)" },
+        { "value": "high", "label": "AAC (320 kbps)" }
+      ]
+    }
+  ]
+}
+
+// Settings → Sources shows "Max (best available)" under the addon's name.
+// Nothing picked yet, so the first option is sent:
+GET /search?q=midnight&quality=max
+GET /stream/track_8f31?quality=max
+
+// The listener taps it and picks "Hi-Res (up to 24-bit / 192 kHz FLAC)":
+GET /search?q=midnight&quality=hires
+GET /stream/track_8f31?quality=hires
+
+// Other query parameters are left out here.`
+
 const downloadsCode = `// manifest.json — stream in BitChord, but never be saved from it:
 {
   "id": "dev.example.reference-addon",
@@ -608,7 +640,7 @@ export function DocsPage() {
               <H3>What BitChord does with your answer</H3>
               <ul className={styles.checkList}>
                 <li><CheckCircle2 />Matches title, artist, album, and duration to avoid the wrong recording.</li>
-                <li><CheckCircle2 />Negotiates lossless, high, or low quality for the current request.</li>
+                <li><CheckCircle2 />Sends the listener’s pick from your quality options, or a lossless, high, or low tier.</li>
                 <li><CheckCircle2 />Uses declared codec and transport metadata before guessing from a URL.</li>
                 <li><CheckCircle2 />Caches manifests and searches for 10 minutes, streams for 5 minutes.</li>
               </ul>
@@ -643,13 +675,14 @@ export function DocsPage() {
                 ['name', 'Recommended', 'Human-readable name shown in the source list.'],
                 ['version', 'Recommended', 'Displayed with health information.'],
                 ['resources', 'Recommended', 'Include search. Stream may be omitted only when rows carry streamURL.'],
-                ['settings', 'No', 'Defaults are forwarded as query parameters on search and stream requests.'],
+                ['settings', 'No', 'A quality select becomes a picker in Sources. Other settings send their defaults as query parameters.'],
                 ['allowDownloads', 'No · default 1', 'Set 0 to allow playback but not downloads. See Download permission.'],
                 ['checkValidLossless', 'No · default 0', 'Set 1 to be used only on a lossless-capable output. See Lossless output gate.'],
               ]} />
-              <Callout title="Settings are defaults, not a form" tone="warn">
-                BitChord does not render an addon settings screen. It forwards scalar default values. The
-                requested <InlineCode>quality</InlineCode> overrides a manifest default of the same key.
+              <Callout title="Only quality gets a picker" tone="warn">
+                BitChord does not render a full addon settings screen. A <InlineCode>quality</InlineCode> select
+                becomes a picker under your addon in Sources (see <a href="#quality-options">Quality options</a>).
+                Every other setting sends its scalar default value.
               </Callout>
             </Section>
 
@@ -703,8 +736,46 @@ export function DocsPage() {
             <Section id="quality" eyebrow="Playback" title="Quality negotiation">
               <p>
                 BitChord sends a <InlineCode>quality</InlineCode> parameter on both search and stream requests.
-                If your manifest lists options, it chooses the closest value by meaning; otherwise it sends one
-                of the native tiers below.
+                If your manifest lists quality options, the value comes from that list. Otherwise it is one of
+                the native tiers below.
+              </p>
+              <H3>Quality options</H3>
+              <p>
+                Declare a setting with <InlineCode>key: "quality"</InlineCode> and an{' '}
+                <InlineCode>options</InlineCode> list, and BitChord shows the option in use under your addon’s
+                name in Settings → Sources. Listeners tap it to pick another option. Whenever BitChord asks for its
+                best audio, which covers playback and search, it sends their pick, or your first option when
+                they haven’t picked one.
+              </p>
+              <CodeBlock code={qualityOptionsCode} label="JSON + HTTP" />
+              <FieldTable
+                headers={['Option field', 'Required', 'Meaning']}
+                rows={[
+                  ['value', 'Yes', 'Sent as quality=. A string or number. Options without one are skipped.'],
+                  ['label', 'Recommended', 'What the listener reads in the picker. The value is shown when it is missing.'],
+                ]}
+              />
+              <H3>Quality option rules that matter</H3>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>List your best option first.</strong><p>With nothing picked, BitChord sends the first option. It doesn’t use <InlineCode>default</InlineCode> for this, and it doesn’t look for the word <InlineCode>lossless</InlineCode>, so the order you list the options in is what decides.</p></div></li>
+                <li><span>2</span><div><strong>Offer at least two options.</strong><p>With a single option there is nothing to choose: BitChord sends it but shows no picker.</p></div></li>
+                <li><span>3</span><div><strong>The pick is the listener’s.</strong><p>It is stored on their device for your addon, and the same value goes on search and stream requests. Remove an option and anyone who picked it moves to your first option.</p></div></li>
+                <li><span>4</span><div><strong>Changes apply on the next manifest read.</strong><p>BitChord saves your options when the addon is added and updates them each time it reads your manifest. Manifests are cached for 10 minutes. Because the options are stored, the picker also works while your addon is unreachable or waiting on the lossless output gate, without contacting you.</p></div></li>
+                <li><span>5</span><div><strong>Smaller requests are still matched by name.</strong><p>A download the listener keeps at High or Standard asks for <InlineCode>HIGH</InlineCode> or <InlineCode>LOW</InlineCode> instead, and their pick doesn’t apply. BitChord sends the option named like that tier: an exact name, then words such as <InlineCode>high</InlineCode>, <InlineCode>320</InlineCode> or <InlineCode>normal</InlineCode> for HIGH, and <InlineCode>low</InlineCode>, <InlineCode>96</InlineCode>, <InlineCode>128</InlineCode> or <InlineCode>min</InlineCode> for LOW. If nothing matches, the first option is sent, so name your smaller renditions that way.</p></div></li>
+              </ol>
+              <Callout title="Only the quality key">
+                BitChord shows a picker for <InlineCode>quality</InlineCode> alone. <InlineCode>help</InlineCode>,{' '}
+                <InlineCode>perNetwork</InlineCode> and other form fields are ignored, so there is one pick per
+                addon for every connection. Every other setting sends its default.
+              </Callout>
+              <p className={styles.detailNote}>
+                The picker needs BitChord 1.9.1 or later. Earlier versions show no picker and send the option
+                whose name best matches the tier being asked for, so on those an option named{' '}
+                <InlineCode>lossless</InlineCode> is sent ahead of one listed above it.
+              </p>
+              <H3>Without options</H3>
+              <p>
+                An addon that lists no quality options receives one of these tiers as the value.
               </p>
               <div className={styles.tierGrid}>
                 <div><span>LOSSLESS</span><strong>Bit-exact request</strong><p>Prefer FLAC, ALAC, WAV, or another lossless codec.</p></div>
@@ -888,6 +959,7 @@ export function DocsPage() {
                   'Logs never expose path-based tokens',
                   'Stereo fallback for Dolby auto mode',
                   'Representative duration metadata',
+                  'Quality options listed best first',
                   'allowDownloads set deliberately',
                   'checkValidLossless only if you need it',
                 ].map((item) => <div key={item}><Check />{item}</div>)}
@@ -905,6 +977,8 @@ export function DocsPage() {
                   ['Downloads come from another source', 'Your manifest has allowDownloads set to 0 (the row in Sources says Streaming only). Remove the key or set it to 1; devices pick the change up on their next manifest read.'],
                   ['The addon gets no requests at all', 'If checkValidLossless is 1, BitChord stays silent until a wired, USB, HDMI or LDAC/LHDC/aptX Lossless output is connected. The row in Sources says Needs a lossless output. On Bluetooth, grant Nearby devices so the codec can be read.'],
                   ['LDAC headphones are not accepted', 'Check that the phone is actually using LDAC (Developer options → Bluetooth audio codec) and that Nearby devices is allowed for BitChord. Without that permission the codec is unknown and does not count.'],
+                  ['Listeners get a lower tier than your best', 'With nothing picked, BitChord sends your first quality option, not default and not the option named lossless. Move your best option to the top of options.'],
+                  ['No quality picker appears under the addon', 'Declare a setting with key quality and at least two options that each have a value. Devices show it after their next manifest read; opening Settings → Sources triggers one.'],
                   ['The wrong recording is selected', 'Improve artist, album, and duration metadata. Avoid live, edit, remix, or instrumental variants unless the query asks for them.'],
                 ].map(([title, copy]) => (
                   <details key={title}>
