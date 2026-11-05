@@ -1027,7 +1027,7 @@ export function DocsPage() {
                 <li><span>1</span><div><strong>The app makes a key inside the phone’s secure hardware.</strong><p>Android’s key attestation produces a certificate chain, signed by Google, that names the app’s package and signing certificate and says whether the phone’s OS is genuine and its bootloader locked.</p></div></li>
                 <li><span>2</span><div><strong>BitChord’s auth service checks that proof.</strong><p>It accepts only the official, release-signed BitChord on a phone with a verified OS, and issues a 1-hour token bound to that hardware key. A fork can’t produce this proof without BitChord’s private signing key.</p></div></li>
                 <li><span>3</span><div><strong>Every addon request carries the token and a fresh signature.</strong><p>The signature is made by the hardware key over your hostname, the time and the token. The key never leaves the phone, so a token copied off a real install is useless anywhere else.</p></div></li>
-                <li><span>4</span><div><strong>Your server checks both, locally, in under a millisecond.</strong><p>It downloads BitChord’s public keys about once an hour. It never calls the auth service per request, and there’s nothing to register: no account, no API key.</p></div></li>
+                <li><span>4</span><div><strong>Your server checks both, locally, in under a millisecond.</strong><p>It downloads BitChord’s public keys from <InlineCode>{AUTH_ISSUER}/.well-known/jwks.json</InlineCode> about once an hour. It never calls the auth service per request, and there’s nothing to register: no account, no API key.</p></div></li>
               </ol>
               <H3>Who gets refused</H3>
               <FieldTable
@@ -1072,6 +1072,12 @@ export function DocsPage() {
                     <p>
                       Download the file for your stack above and add it unchanged. Don’t rewrite it: it’s about
                       200 lines and it’s the reference implementation.
+                    </p>
+                    <p>
+                      The verifier makes one outbound request: about once an hour it fetches BitChord’s public keys
+                      from <InlineCode>{AUTH_ISSUER}/.well-known/jwks.json</InlineCode>. That address is built in, so
+                      there’s nothing to configure, but if your server restricts outbound traffic, allow HTTPS to{' '}
+                      <InlineCode>bitchord-auth.kushagrasingh.in</InlineCode>.
                     </p>
                     <SimpleTable
                       code={[1]}

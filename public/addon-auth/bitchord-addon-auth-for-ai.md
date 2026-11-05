@@ -82,6 +82,12 @@ download it from the URLs below). Don't rewrite it and don't add dependencies.
 Downloads: https://bitchord.kushagrasingh.in/addon-auth/bitchord-addon-auth.mjs and
 https://bitchord.kushagrasingh.in/addon-auth/bitchord_addon_auth.py
 
+The verifier makes exactly one outbound request: about once an hour it fetches
+BitChord's public keys from `https://bitchord-auth.kushagrasingh.in/.well-known/jwks.json`. The URL is
+built into the verifier, so don't configure it. If the server or its platform
+restricts egress, allow HTTPS to `bitchord-auth.kushagrasingh.in`. This is the only address
+the addon ever contacts for auth; it never calls BitChord per request.
+
 For TypeScript projects, import the `.mjs` as is; if the project forbids JS,
 add `// @ts-nocheck` handling or a `.d.ts` shim rather than rewriting the logic.
 
