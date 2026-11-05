@@ -4,7 +4,7 @@ import { DocsPage } from '@/components/docs/docs-page'
 export const metadata: Metadata = {
   title: 'Addon developer guide',
   description:
-    'Build a BitChord addon with the manifest, search, stream, quality, Dolby Atmos, download permission, and lossless output contracts.',
+    'Build a BitChord addon: required addon auth (bitchordAuth), the manifest, search, stream, quality, Dolby Atmos, download permission, and lossless output contracts.',
   alternates: { canonical: '/docs' },
 }
 

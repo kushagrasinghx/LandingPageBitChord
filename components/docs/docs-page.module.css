@@ -939,7 +939,7 @@
   font: 600 13px var(--font-mono);
 }
 
-.steps strong {
+.steps > div > div > strong {
   display: block;
   padding-top: 4px;
   color: var(--ink);
@@ -952,6 +952,11 @@
   color: var(--body);
   font-size: 16px;
   line-height: 1.7;
+}
+
+.steps p strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .commandCard {
@@ -1100,6 +1105,213 @@
 
 /* -------------------------------- responsive ------------------------------- */
 
+/* -------------------------------- addon auth -------------------------------- */
+
+/* The notice at the top of the guide: a callout like the others, with the amber of a warning. */
+.authNotice {
+  margin-bottom: 40px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.authNoticeLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.authNoticeTitle {
+  margin-top: 10px;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.authNoticeBody {
+  margin-top: 6px;
+  color: var(--body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.authNoticeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.authNoticeLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.authNoticeLinks a:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.authNoticeLinks svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+/* Sidebar: the auth group is badged so it is found before anything else. */
+.navGroupNew p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.navNewPill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(245 165 36 / 0.14);
+  color: #fcd38d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The exact line a listener sees on the Sources screen. */
+.appQuote {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgb(255 107 107 / 0.3);
+  border-radius: 10px;
+  background: rgb(255 107 107 / 0.06);
+  color: #ffb4b4;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Framework tabs over a code block. */
+.codeTabs {
+  margin-top: 24px;
+}
+
+.codeTabList {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.codeTabList button {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.codeTabList button:hover {
+  color: var(--ink);
+}
+
+.codeTabList button.codeTabActive {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.codeTabs .codeBlock {
+  margin-top: 10px;
+}
+
+/* The three downloads. */
+.downloadGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.downloadCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.downloadCard:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.downloadIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.downloadIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.downloadText {
+  display: grid;
+  gap: 4px;
+}
+
+.downloadName {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font: 600 14px/1.4 var(--font-mono);
+}
+
+.downloadCopy {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.downloadArrow {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+.downloadCard:hover .downloadArrow {
+  color: var(--ink);
+}
+
+/* Steps that carry code and tables need the full column. */
+.steps > div > div {
+  min-width: 0;
+}
+
 @media (max-width: 1279px) {
   .shell {
     grid-template-columns: 248px minmax(0, 1fr);
@@ -1171,6 +1383,7 @@
   .checkGrid {
     grid-template-columns: minmax(0, 1fr);
   }
+
 
   .flow {
     grid-template-columns: repeat(2, minmax(0, 1fr));

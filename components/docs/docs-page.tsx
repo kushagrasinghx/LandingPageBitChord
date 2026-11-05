@@ -3,11 +3,15 @@
 import Link from 'next/link'
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
   Check,
   CheckCircle2,
   ChevronRight,
   Clipboard,
+  Download,
+  FileCode2,
+  FileText,
   Info,
   Lightbulb,
   Menu,
@@ -31,7 +35,18 @@ import styles from './docs-page.module.css'
 
 type NavItem = { id: string; label: string; group: string }
 
+/** The addon-auth group: listed first and badged, because every addon needs it now. */
+const AUTH_GROUP = 'Addon auth'
+
 const navigation: NavItem[] = [
+  { id: 'addon-auth', label: 'Why it’s mandatory', group: AUTH_GROUP },
+  { id: 'auth-setup', label: 'Set it up', group: AUTH_GROUP },
+  { id: 'auth-frameworks', label: 'Framework recipes', group: AUTH_GROUP },
+  { id: 'auth-media', label: 'Short-lived media URLs', group: AUTH_GROUP },
+  { id: 'auth-rollout', label: 'Test and roll out', group: AUTH_GROUP },
+  { id: 'auth-errors', label: 'Errors and claims', group: AUTH_GROUP },
+  { id: 'auth-protocol', label: 'Protocol reference', group: AUTH_GROUP },
+  { id: 'auth-faq', label: 'Auth FAQ', group: AUTH_GROUP },
   { id: 'introduction', label: 'Introduction', group: 'Overview' },
   { id: 'how-it-works', label: 'How addons work', group: 'Overview' },
   { id: 'quickstart', label: 'Quickstart', group: 'Build' },
@@ -52,6 +67,7 @@ const manifestCode = `{
   "name": "Reference Addon",
   "version": "1.0.0",
   "resources": ["search", "stream"],
+  "bitchordAuth": true,
   "allowDownloads": 1,
   "checkValidLossless": 0,
   "settings": [
@@ -100,7 +116,12 @@ const streamCode = `GET /stream/track_8f31?quality=lossless&atmos=auto
   "bitrate": 2800000
 }`
 
-const serverCode = `const tracks = [
+const serverCode = `import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
+
+// Required: only the official BitChord app gets past this. See Addon auth.
+const bitchord = createBitChordAuth({ hosts: ["audio.example"] })
+
+const tracks = [
   {
     id: "track_8f31",
     title: "Midnight Signal",
@@ -117,15 +138,19 @@ const MANIFEST = {
   id: "dev.example.reference-addon",
   name: "Reference Addon",
   version: "1.0.0",
-  resources: ["search", "stream"]
+  resources: ["search", "stream"],
+  bitchordAuth: true
 }
 
 export async function handleRequest(request) {
   const url = new URL(request.url)
 
   if (url.pathname === "/manifest.json") {
-    return json(MANIFEST)
+    return json(MANIFEST) // stays public
   }
+
+  const denied = await bitchord.guard(request) // 401 for anything but BitChord
+  if (denied) return denied
 
   if (url.pathname === "/search") {
     const query = (url.searchParams.get("q") || "").toLowerCase()
@@ -163,6 +188,7 @@ function json(value) {
 }
 
 function signedMediaUrl(id) {
+  // Sign and expire this in production: see Short-lived media URLs.
   return \`https://audio.example/media/\${encodeURIComponent(id)}.flac\`
 }`
 
@@ -426,6 +452,320 @@ function FieldTable({
   )
 }
 
+/** A plain table; the columns listed in `code` are set as inline code. */
+function SimpleTable({ headers, rows, code = [] }: { headers: string[]; rows: string[][]; code?: number[] }) {
+  return (
+    <div className={styles.tableWrap}>
+      <table>
+        <thead>
+          <tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.join('|')}>
+              {row.map((cell, i) => (
+                <td key={i} className={code.includes(i) ? styles.fieldCell : undefined}>
+                  {code.includes(i) ? <InlineCode>{cell}</InlineCode> : cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/* ------------------------------- addon auth ------------------------------- */
+
+const AUTH_ISSUER = 'https://bitchord-auth.kushagrasingh.in'
+const AUTH_MIN_VERSION = '1.9.1'
+const AI_BRIEF_URL = '/addon-auth/bitchord-addon-auth-for-ai.md'
+const JS_VERIFIER_URL = '/addon-auth/bitchord-addon-auth.mjs'
+const PY_VERIFIER_URL = '/addon-auth/bitchord_addon_auth.py'
+const OUTDATED_MESSAGE =
+  'This addon is out of date, so BitChord can’t use it. Ask its developer to update it by following the latest BitChord addon docs.'
+
+const authManifestCode = `{
+  "id": "com.example.myaddon",
+  "name": "My Addon",
+  "version": "1.2.0",
+  "resources": ["search", "stream"],
+  "bitchordAuth": true
+}`
+
+const authExpressCode = `import express from "express"
+import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
+
+const app = express()
+const bitchord = createBitChordAuth({ hosts: ["myaddon.example.com"] })
+
+app.get("/manifest.json", (req, res) => res.json(manifest)) // stays public
+app.use(bitchord.express())                                  // everything below needs BitChord
+
+app.get("/search", async (req, res) => { /* ... */ })
+app.get("/stream/:id", async (req, res) => { /* ... */ })
+
+// On success, req.bitchord holds the token's claims.`
+
+const authFetchCode = `import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
+
+// Module scope, so the key cache is shared between requests.
+const bitchord = createBitChordAuth({
+  hosts: ["myaddon.example.com", "myaddon.me.workers.dev"]
+})
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url)
+    if (url.pathname.endsWith("/manifest.json")) return Response.json(manifest)
+
+    const denied = await bitchord.guard(request) // a 401/503 Response, or null
+    if (denied) return denied
+
+    // ... your /search and /stream handling
+  }
+}`
+
+const authHonoCode = `import { Hono } from "hono"
+import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
+
+const app = new Hono()
+const bitchord = createBitChordAuth({ hosts: ["myaddon.example.com"] })
+
+app.use("*", async (c, next) =>
+  c.req.path.endsWith("/manifest.json")
+    ? next()
+    : (await bitchord.guard(c.req.raw)) ?? next()
+)`
+
+const authNextCode = `// lib/bitchord.js
+import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
+export const bitchord = createBitChordAuth({ hosts: ["myaddon.example.com"] })
+
+// app/search/route.js (do the same in every route except manifest.json)
+import { bitchord } from "@/lib/bitchord"
+
+export async function GET(request) {
+  const denied = await bitchord.guard(request)
+  if (denied) return denied
+  // ...
+}`
+
+const authFastifyCode = `fastify.addHook("onRequest", async (req, reply) => {
+  if (req.url.split("?")[0].endsWith("/manifest.json")) return
+  const result = await bitchord.verifyRequest(req.raw)
+  if (!result.ok) {
+    const r = bitchord.rejection(result)
+    return reply.code(r.status).headers(r.headers).send(r.body)
+  }
+  req.bitchord = result.claims
+})`
+
+const authFastapiCode = `from fastapi import Depends, FastAPI, Request
+from fastapi.responses import Response
+from bitchord_addon_auth import BitChordAuth
+
+app = FastAPI()
+bitchord = BitChordAuth(hosts=["myaddon.example.com"])
+
+class Denied(Exception):
+    def __init__(self, result): self.result = result
+
+@app.exception_handler(Denied)
+async def denied(_, exc: Denied):
+    return Response(exc.result.body, status_code=exc.result.status, headers=exc.result.headers)
+
+def require_bitchord(request: Request):
+    result = bitchord.verify_headers(request.headers)
+    if not result.ok:
+        raise Denied(result)
+    return result.claims
+
+@app.get("/manifest.json")
+def get_manifest(): return MANIFEST            # stays public
+
+@app.get("/search")
+def search(q: str, claims=Depends(require_bitchord)): ...
+
+@app.get("/stream/{track_id}")
+def stream(track_id: str, claims=Depends(require_bitchord)): ...`
+
+const authFlaskCode = `from flask import Flask, request, Response, g
+from bitchord_addon_auth import BitChordAuth
+
+app = Flask(__name__)
+bitchord = BitChordAuth(hosts=["myaddon.example.com"])
+
+@app.before_request
+def require_bitchord():
+    if request.path.endswith("/manifest.json"):
+        return None
+    result = bitchord.verify_headers(request.headers)
+    if not result.ok:
+        return Response(result.body, status=result.status, headers=result.headers)
+    g.bitchord = result.claims`
+
+const authDjangoCode = `from django.http import HttpResponse
+from bitchord_addon_auth import BitChordAuth
+
+bitchord = BitChordAuth(hosts=["myaddon.example.com"])
+
+class BitChordAuthMiddleware:
+    def __init__(self, get_response): self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.endswith("/manifest.json"):
+            return self.get_response(request)
+        result = bitchord.verify_headers(request.headers)
+        if not result.ok:
+            response = HttpResponse(result.body, status=result.status)
+            for key, value in result.headers.items(): response[key] = value
+            return response
+        request.bitchord = result.claims
+        return self.get_response(request)`
+
+const authMediaCode = `import crypto from "node:crypto"
+const MEDIA_SECRET = process.env.MEDIA_SECRET // long random string, server-side only
+
+// Return this from /stream instead of a permanent URL.
+export function signedMediaUrl(id, ttlSeconds = 1800) {
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds
+  const sig = crypto.createHmac("sha256", MEDIA_SECRET).update(\`\${id}.\${exp}\`).digest("base64url")
+  return \`https://myaddon.example.com/media/\${encodeURIComponent(id)}?exp=\${exp}&sig=\${sig}\`
+}
+
+// Check this on the media route. Do NOT require X-BitChord-* headers there.
+export function mediaAllowed(id, exp, sig) {
+  if (!/^\\d+$/.test(String(exp)) || Number(exp) < Date.now() / 1000) return false
+  const want = crypto.createHmac("sha256", MEDIA_SECRET).update(\`\${id}.\${exp}\`).digest()
+  const got = Buffer.from(String(sig ?? ""), "base64url")
+  return got.length === want.length && crypto.timingSafeEqual(got, want)
+}`
+
+const authLogOnlyCode = `// Step 1 of the rollout: verify, log, but still serve.
+app.use(async (req, res, next) => {
+  if (req.path.endsWith("/manifest.json")) return next()
+  const result = await bitchord.verifyRequest(req)
+  if (!result.ok) console.log("bitchord-auth would refuse:", result.error)
+  next()
+})`
+
+const authLogOnlyPyCode = `result = bitchord.verify_headers(request.headers)
+if not result.ok:
+    print("bitchord-auth would refuse:", result.error)
+# ...serve the request anyway`
+
+const authCurlCode = `# Manifest: public, and it declares the flag
+curl -s https://myaddon.example.com/manifest.json
+
+# Anything else without BitChord: refused with the BitChord challenge
+curl -si "https://myaddon.example.com/search?q=test"
+# HTTP/1.1 401
+# www-authenticate: BitChord realm="bitchord-addons", error="missing", ...
+
+curl -si https://myaddon.example.com/stream/anything     # 401 as well
+
+# Forged headers are refused too
+curl -si -H "X-BitChord-Token: x.y.z" -H "X-BitChord-Proof: v1.0.x" \\
+  "https://myaddon.example.com/search?q=test"            # 401`
+
+const authRejectionCode = `HTTP/1.1 401 Unauthorized
+content-type: application/json
+cache-control: no-store
+www-authenticate: BitChord realm="bitchord-addons", error="expired", error_description="Token expired"
+
+{ "error": "bitchord_auth", "code": "expired", "message": "Token expired" }`
+
+const authHeadersCode = `GET /search?q=midnight&quality=lossless
+X-BitChord-Token: eyJhbGciOiJFZERTQSIsImtpZCI6Ii4uLiJ9.eyJpc3MiOi...
+X-BitChord-Proof: v1.1793895893081.MEUCIQ...  (86 base64url characters)`
+
+const authProofCode = `// The bytes the device signs (UTF-8, \\n is a single line feed):
+bitchord-addon-proof/v1\\n<host>\\n<unix-ms>\\n<base64url(SHA-256(token))>
+
+// <host>    one of YOUR configured hostnames, never the request's Host header
+// <unix-ms> the number from the proof header, within ±120 s of your clock
+// signature ECDSA P-256 / SHA-256, raw r||s (64 bytes), base64url, no padding`
+
+const authTokenCode = `// Header
+{ "alg": "EdDSA", "kid": "h0nr3tdm5pQ", "typ": "JWT" }
+
+// Payload
+{
+  "iss": "${AUTH_ISSUER}",
+  "aud": "bitchord-addons",
+  "sub": "Qm9…",          // install's key thumbprint, rotates hourly
+  "iat": 1793895893,
+  "exp": 1793899493,      // 1 hour
+  "ver": 37,              // BitChord version code
+  "sl": "tee",            // tee | strongbox
+  "cnf": { "jwk": { "kty": "EC", "crv": "P-256", "x": "…", "y": "…" } }
+}`
+
+/** Several samples of the same thing, one per stack, behind a row of tabs. */
+function CodeTabs({ tabs }: { tabs: Array<{ name: string; label: string; code: string }> }) {
+  const [current, setCurrent] = useState(0)
+  const tab = tabs[current]
+  return (
+    <div className={styles.codeTabs}>
+      <div className={styles.codeTabList} role="tablist" aria-label="Framework">
+        {tabs.map((t, i) => (
+          <button
+            key={t.name}
+            type="button"
+            role="tab"
+            aria-selected={i === current}
+            className={i === current ? styles.codeTabActive : ''}
+            onClick={() => setCurrent(i)}
+          >
+            {t.name}
+          </button>
+        ))}
+      </div>
+      <CodeBlock key={tab.name} code={tab.code} label={tab.label} />
+    </div>
+  )
+}
+
+/** The three files an addon developer takes away from this page. */
+function AuthDownloads() {
+  const files = [
+    {
+      href: JS_VERIFIER_URL,
+      icon: FileCode2,
+      name: 'bitchord-addon-auth.mjs',
+      copy: 'Verifier for Node, Workers, Deno, Bun, Next.js. No dependencies.',
+    },
+    {
+      href: PY_VERIFIER_URL,
+      icon: FileCode2,
+      name: 'bitchord_addon_auth.py',
+      copy: 'Verifier for Python 3.9+. Needs pip install cryptography.',
+    },
+    {
+      href: AI_BRIEF_URL,
+      icon: FileText,
+      name: 'bitchord-addon-auth-for-ai.md',
+      copy: 'This whole guide plus both verifiers, for Claude, Cursor, Copilot or ChatGPT.',
+    },
+  ]
+  return (
+    <div className={styles.downloadGrid}>
+      {files.map(({ href, icon: Icon, name, copy }) => (
+        <a key={href} href={href} download className={styles.downloadCard}>
+          <span className={styles.downloadIcon}><Icon aria-hidden /></span>
+          <span className={styles.downloadText}>
+            <span className={styles.downloadName}>{name}</span>
+            <span className={styles.downloadCopy}>{copy}</span>
+          </span>
+          <Download className={styles.downloadArrow} aria-hidden />
+        </a>
+      ))}
+    </div>
+  )
+}
+
 /* ---------------------------------- page --------------------------------- */
 
 export function DocsPage() {
@@ -469,6 +809,8 @@ export function DocsPage() {
         const sections = navigation
           .map(({ id }) => document.getElementById(id))
           .filter((section): section is HTMLElement => Boolean(section))
+          // Page order, not list order: the auth group is listed first but follows the intro.
+          .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
 
         const current = sections.reduce((selected, section) => {
           return section.getBoundingClientRect().top <= marker ? section : selected
@@ -557,8 +899,11 @@ export function DocsPage() {
         <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ''}`}>
           <nav aria-label="Documentation">
             {groups.map((group) => (
-              <div className={styles.navGroup} key={group}>
-                <p>{group}</p>
+              <div className={`${styles.navGroup} ${group === AUTH_GROUP ? styles.navGroupNew : ''}`} key={group}>
+                <p>
+                  {group}
+                  {group === AUTH_GROUP && <span className={styles.navNewPill}>Required</span>}
+                </p>
                 {navigation.filter((item) => item.group === group).map((item) => (
                   <a
                     key={item.id}
@@ -583,6 +928,26 @@ export function DocsPage() {
         <main id="main-content" className={styles.main}>
           <article className={styles.article}>
             <section id="introduction" className={styles.intro} aria-labelledby="introduction-title">
+              <aside className={styles.authNotice} aria-label="Addon auth is required">
+                <p className={styles.authNoticeLabel}>
+                  <span className={`${styles.badge} ${styles.badgeRequired}`}>Required</span>
+                  New in BitChord {AUTH_MIN_VERSION}
+                </p>
+                <p className={styles.authNoticeTitle}>Addons must now verify that requests come from BitChord</p>
+                <p className={styles.authNoticeBody}>
+                  BitChord only uses addons that declare <InlineCode>"bitchordAuth": true</InlineCode> and check
+                  every request. Other addons are shown to listeners as out of date and can’t be streamed until
+                  they’re updated. The change takes about 15 minutes.
+                </p>
+                <div className={styles.authNoticeLinks}>
+                  <a href="#addon-auth">
+                    Set up addon auth <ArrowRight aria-hidden />
+                  </a>
+                  <a href={AI_BRIEF_URL} download>
+                    <Download aria-hidden /> Download .md for AI
+                  </a>
+                </div>
+              </aside>
               <p className={styles.eyebrow}>Addon protocol</p>
               <h1 id="introduction-title">Build an addon for BitChord</h1>
               <p className={styles.lede}>
@@ -599,7 +964,7 @@ export function DocsPage() {
                 {[
                   ['#quickstart', 'Quickstart', 'Expose three routes from any HTTPS server.'],
                   ['#manifest', 'Manifest', 'Declare your addon, its resources and switches.'],
-                  ['#dolby-atmos', 'Dolby Atmos', 'Serve immersive mixes alongside stereo.'],
+                  ['#addon-auth', 'Addon auth', 'Required: answer only the official BitChord app.'],
                 ].map(([href, title, copy]) => (
                   <a key={href} href={href} className={styles.linkCard}>
                     <span className={styles.linkCardTitle}>
@@ -616,6 +981,341 @@ export function DocsPage() {
               BitChord never downloads or executes addon code. It calls your server over HTTP, reads JSON,
               and hands the returned media URL to its player.
             </Callout>
+
+            {/* ------------------------- addon auth (new) ------------------------- */}
+
+            <Section id="addon-auth" eyebrow="Addon auth · New · Required" title="Addon auth is now mandatory">
+              <p>
+                From BitChord {AUTH_MIN_VERSION}, every addon must prove it only answers the official BitChord
+                Android app. The app attaches a hardware-backed proof to each request, and your server checks it.
+                Forks of BitChord, other music apps, scripts, <InlineCode>curl</InlineCode> and browsers get{' '}
+                <InlineCode>401</InlineCode>.
+              </p>
+              <H3>What happens to addons that don’t update</H3>
+              <p>
+                BitChord reads your manifest. If it doesn’t declare <InlineCode>"bitchordAuth": true</InlineCode>,
+                or there is no manifest at all, the addon is out of date. BitChord then doesn’t search, stream or
+                download from it, and the addon’s row in Settings → Sources tells the listener, in red:
+              </p>
+              <blockquote className={styles.appQuote}>{OUTDATED_MESSAGE}</blockquote>
+              <p>
+                Once you publish the updated manifest, devices pick it up the next time BitChord starts or the
+                listener opens Settings → Sources. Nobody has to re-add the addon.
+              </p>
+              <H3>Why a User-Agent or client-name check isn’t enough</H3>
+              <p>
+                BitChord is open source, so anything the app sends (its name, its User-Agent, an API key) can be
+                copied into a fork in a minute. That is exactly how forks and other apps have been using addons
+                built for BitChord. The one thing a fork can’t copy is BitChord’s <strong>release signing key</strong>.
+                Addon auth has Android itself vouch for it.
+              </p>
+              <div className={styles.flow} aria-label="Addon auth lifecycle">
+                {[
+                  ['01', 'Attest', 'Key made in phone hardware'],
+                  ['02', 'Token', '1-hour token, bound to that key'],
+                  ['03', 'Sign', 'Every request signed by the key'],
+                  ['04', 'Verify', 'Your server checks, offline'],
+                ].map(([step, title, detail]) => (
+                  <div className={styles.flowItem} key={step}>
+                    <span>{step}</span>
+                    <strong>{title}</strong>
+                    <code>{detail}</code>
+                  </div>
+                ))}
+              </div>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>The app makes a key inside the phone’s secure hardware.</strong><p>Android’s key attestation produces a certificate chain, signed by Google, that names the app’s package and signing certificate and says whether the phone’s OS is genuine and its bootloader locked.</p></div></li>
+                <li><span>2</span><div><strong>BitChord’s auth service checks that proof.</strong><p>It accepts only the official, release-signed BitChord on a phone with a verified OS, and issues a 1-hour token bound to that hardware key. A fork can’t produce this proof without BitChord’s private signing key.</p></div></li>
+                <li><span>3</span><div><strong>Every addon request carries the token and a fresh signature.</strong><p>The signature is made by the hardware key over your hostname, the time and the token. The key never leaves the phone, so a token copied off a real install is useless anywhere else.</p></div></li>
+                <li><span>4</span><div><strong>Your server checks both, locally, in under a millisecond.</strong><p>It downloads BitChord’s public keys about once an hour. It never calls the auth service per request, and there’s nothing to register: no account, no API key.</p></div></li>
+              </ol>
+              <H3>Who gets refused</H3>
+              <FieldTable
+                headers={['Client', 'Works', 'Why']}
+                rows={[
+                  ['Official BitChord for Android', 'Yes', 'On an ordinary phone with a locked bootloader, as before.'],
+                  ['Forks, rebuilds, modified APKs', 'No', 'Even if they keep the BitChord name, package or client string: they aren’t signed with BitChord’s key.'],
+                  ['Other apps, scripts, curl, browsers', 'No', 'They can’t produce the hardware-backed proof.'],
+                  ['Rooted phones, custom ROMs', 'No', 'BitChord only accepts phones with a locked bootloader and a verified, unmodified OS.'],
+                  ['Emulators, phones without secure key storage', 'No', 'No hardware to hold the key.'],
+                  ['BitChord desktop and web', 'No', 'They can’t prove they’re genuine. Once you enforce auth, they can’t use your addon.'],
+                ]}
+              />
+              <Callout title="About 15 minutes of work" tone="success">
+                One manifest field, one file to copy, and a few lines in your server. If you use an AI coding
+                assistant, give it the <a href={AI_BRIEF_URL} download>Markdown for AI</a>: it has every step below
+                plus the full verifier source.
+              </Callout>
+            </Section>
+
+            <Section id="auth-setup" eyebrow="Addon auth" title="Set it up">
+              <p>Do all five steps. The first three make your addon usable again; the last two make it safe.</p>
+              <AuthDownloads />
+              <div className={styles.steps}>
+                <div>
+                  <span>01</span>
+                  <div>
+                    <strong>Declare the flag in your manifest</strong>
+                    <p>
+                      Add <InlineCode>"bitchordAuth": true</InlineCode> to <InlineCode>manifest.json</InlineCode>.{' '}
+                      <InlineCode>true</InlineCode>, <InlineCode>1</InlineCode> and the same values as strings are
+                      accepted. <strong>Keep the manifest itself public</strong>: BitChord reads it without
+                      credentials to learn that it has to authenticate.
+                    </p>
+                    <CodeBlock code={authManifestCode} />
+                  </div>
+                </div>
+                <div>
+                  <span>02</span>
+                  <div>
+                    <strong>Add the verifier file to your project</strong>
+                    <p>
+                      Download the file for your stack above and add it unchanged. Don’t rewrite it: it’s about
+                      200 lines and it’s the reference implementation.
+                    </p>
+                    <SimpleTable
+                      code={[1]}
+                      headers={['Your stack', 'File', 'Needs']}
+                      rows={[
+                        ['Node 20+, Express, Fastify, Hono, Next.js, Cloudflare Workers, Deno, Bun, Vercel/Netlify edge', 'bitchord-addon-auth.mjs', 'Nothing. It uses WebCrypto only.'],
+                        ['Python 3.9+: FastAPI, Flask, Django, anything', 'bitchord_addon_auth.py', 'pip install cryptography'],
+                        ['Anything else: Go, Rust, PHP, Java…', 'Port it', 'An Ed25519 and ECDSA P-256 library. See Protocol reference.'],
+                      ]}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <span>03</span>
+                  <div>
+                    <strong>Check every route except the manifest</strong>
+                    <p>
+                      Create one verifier per process, at module scope, and run it before search, stream and
+                      anything else your addon serves. Send refusals with the helper it gives you, because
+                      BitChord reads the <InlineCode>WWW-Authenticate</InlineCode> header to decide whether to
+                      refresh its token. Recipes for each framework are in{' '}
+                      <a href="#auth-frameworks">Framework recipes</a>.
+                    </p>
+                    <CodeBlock code={authExpressCode} label="JAVASCRIPT · EXPRESS" />
+                  </div>
+                </div>
+                <div>
+                  <span>04</span>
+                  <div>
+                    <strong>Set hosts to your public hostname(s)</strong>
+                    <p>
+                      The app signs each request for <strong>the hostname in the addon URL the listener pasted</strong>:
+                      lowercase, no <InlineCode>https://</InlineCode>, no port, no path. The verifier deliberately
+                      ignores the <InlineCode>Host</InlineCode> header and only trusts the hostnames you configure. If <InlineCode>hosts</InlineCode> is wrong, every request fails with{' '}
+                      <InlineCode>invalid_proof</InlineCode>.
+                    </p>
+                    <SimpleTable
+                      code={[0, 1]}
+                      headers={['Listener pastes', 'hosts', 'Note']}
+                      rows={[
+                        ['https://myaddon.example.com/manifest.json', '["myaddon.example.com"]', 'The usual case.'],
+                        ['https://myaddon.example.com:8443/abc123/manifest.json', '["myaddon.example.com"]', 'Port and path are dropped.'],
+                        ['A custom domain and *.workers.dev both in use', 'List both', 'Same for *.onrender.com, *.vercel.app, *.pages.dev.'],
+                      ]}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <span>05</span>
+                  <div>
+                    <strong>Make media URLs short-lived</strong>
+                    <p>
+                      Auth protects your JSON endpoints. The audio URL your <InlineCode>/stream</InlineCode> returns
+                      is fetched by the player without BitChord’s headers, so a permanent URL can be shared. Sign it
+                      and let it expire: see <a href="#auth-media">Short-lived media URLs</a>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Callout title="Adding the flag without verifying" tone="warn">
+                The flag on its own makes BitChord use your addon again, but it protects nothing: every fork and
+                script still gets in. Ship steps 2–4 with it, even if you start in{' '}
+                <a href="#auth-rollout">log-only mode</a>.
+              </Callout>
+            </Section>
+
+            <Section id="auth-frameworks" eyebrow="Addon auth" title="Framework recipes">
+              <p>
+                The same three rules in every framework: one verifier at module scope, the manifest route stays
+                public, and refusals go out through the helper so BitChord gets the status, the{' '}
+                <InlineCode>WWW-Authenticate</InlineCode> header and the JSON body it expects.
+              </p>
+              <CodeTabs
+                tabs={[
+                  { name: 'Express', label: 'JAVASCRIPT', code: authExpressCode },
+                  { name: 'Workers / Deno / Bun', label: 'JAVASCRIPT', code: authFetchCode },
+                  { name: 'Hono', label: 'JAVASCRIPT', code: authHonoCode },
+                  { name: 'Next.js', label: 'JAVASCRIPT', code: authNextCode },
+                  { name: 'Fastify', label: 'JAVASCRIPT', code: authFastifyCode },
+                  { name: 'FastAPI', label: 'PYTHON', code: authFastapiCode },
+                  { name: 'Flask', label: 'PYTHON', code: authFlaskCode },
+                  { name: 'Django', label: 'PYTHON', code: authDjangoCode },
+                ]}
+              />
+              <H3>What the helpers give you</H3>
+              <SimpleTable
+                code={[0]}
+                headers={['Helper', 'Where', 'What it does']}
+                rows={[
+                  ['express()', 'JS', 'Express/Connect middleware. Sends the refusal itself; sets req.bitchord on success.'],
+                  ['guard(request)', 'JS', 'For Fetch-API handlers. Returns a 401/503 Response to send, or null when the request is allowed.'],
+                  ['verifyRequest(req)', 'JS', 'Verifies a Fetch Request or a Node request. Returns { ok, claims } or { ok: false, status, error }.'],
+                  ['rejection(result)', 'JS', 'The status, headers and body to send for a failed result, for any other framework.'],
+                  ['verify_headers(headers)', 'Python', 'Works with Flask, Starlette/FastAPI and Django header objects, or a plain dict.'],
+                  ['result.status / headers / body', 'Python', 'What to send back when result.ok is false.'],
+                ]}
+              />
+              <p className={styles.detailNote}>
+                In Python, <InlineCode>verify_headers</InlineCode> makes a blocking request about once an hour to
+                refresh BitChord’s keys. That’s fine in FastAPI’s sync <InlineCode>def</InlineCode> routes and
+                dependencies, which run in a thread pool. In an <InlineCode>async def</InlineCode> route, call it
+                through <InlineCode>run_in_threadpool</InlineCode>.
+              </p>
+            </Section>
+
+            <Section id="auth-media" eyebrow="Addon auth" title="Short-lived media URLs">
+              <p>
+                Auth protects <InlineCode>/search</InlineCode> and <InlineCode>/stream</InlineCode>. The media URL
+                you return is then opened by the player directly, <strong>without</strong> the BitChord headers. If
+                that URL never expires, anyone who gets hold of one can play it anywhere.
+              </p>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>Expire media URLs in 15–30 minutes.</strong><p>Never less than 5: BitChord caches a stream answer for 5 minutes, and a long track that is paused and resumed fetches the URL again.</p></div></li>
+                <li><span>2</span><div><strong>Use your storage provider’s signed URLs.</strong><p>S3, R2, GCS and B2 can all pre-sign a URL with an expiry. Return that from <InlineCode>/stream</InlineCode>.</p></div></li>
+                <li><span>3</span><div><strong>Or sign your own.</strong><p>If you proxy audio yourself, put an HMAC of the track id and expiry in the query string and check it on the media route.</p></div></li>
+                <li><span>4</span><div><strong>Don’t require BitChord headers on the media route.</strong><p>The player doesn’t send them, so playback would fail.</p></div></li>
+              </ol>
+              <CodeBlock code={authMediaCode} label="JAVASCRIPT · NODE" />
+            </Section>
+
+            <Section id="auth-rollout" eyebrow="Addon auth" title="Test and roll out">
+              <H3>Check it from a terminal</H3>
+              <CodeBlock code={authCurlCode} label="SHELL" />
+              <H3>Check it in BitChord</H3>
+              <p>
+                Add the addon in the official BitChord app (Settings → Sources → Add an addon) and play a track.
+                The row must not say the addon is out of date, and search and playback must work. If BitChord is
+                refused, its logs show <InlineCode>didn’t accept BitChord’s verification (&lt;code&gt;)</InlineCode>{' '}
+                with one of the <a href="#auth-errors">error codes</a>.
+              </p>
+              <H3>Roll out without breaking anyone</H3>
+              <div className={styles.steps}>
+                {[
+                  ['01', 'Ship the flag with log-only verification', 'BitChord sends credentials as soon as it sees the flag. Verify them and log failures, but keep serving every request.'],
+                  ['02', 'Watch the logs for a few days', 'invalid_proof should be near zero; if it isn’t, hosts is wrong. missing is expected: that’s every client that isn’t BitChord.'],
+                  ['03', 'Switch to blocking', 'Replace the log-only check with the recipe for your framework. From then on, only BitChord gets through.'],
+                ].map(([number, title, copy]) => (
+                  <div key={number}>
+                    <span>{number}</span>
+                    <div><strong>{title}</strong><p>{copy}</p></div>
+                  </div>
+                ))}
+              </div>
+              <CodeTabs
+                tabs={[
+                  { name: 'Express', label: 'JAVASCRIPT', code: authLogOnlyCode },
+                  { name: 'Python', label: 'PYTHON', code: authLogOnlyPyCode },
+                ]}
+              />
+              <Callout title="Log-only isn’t a place to stay" tone="warn">
+                It keeps your addon working in BitChord, but it lets forks and scripts in too. Listeners on BitChord
+                versions from before addon auth get <InlineCode>401</InlineCode> once you block; ask them to update.
+              </Callout>
+            </Section>
+
+            <Section id="auth-errors" eyebrow="Addon auth" title="Errors and claims">
+              <p>
+                Every refusal is a <InlineCode>401</InlineCode> (or <InlineCode>503</InlineCode>) with a{' '}
+                <InlineCode>WWW-Authenticate: BitChord</InlineCode> header and a JSON body. The helpers produce
+                exactly this; BitChord reads the header to decide what to do next.
+              </p>
+              <CodeBlock code={authRejectionCode} label="HTTP" />
+              <SimpleTable
+                code={[0]}
+                headers={['Code', 'Status', 'Meaning', 'What BitChord does']}
+                rows={[
+                  ['missing', '401', 'No BitChord credentials: a fork, script or browser, or BitChord before its first authenticated request.', 'Attaches credentials and retries.'],
+                  ['expired', '401', 'The token is past its expiry.', 'Gets a new token and retries once.'],
+                  ['invalid_token', '401', 'The token is malformed, tampered with, or not signed by BitChord (for example a fork running its own auth server).', 'Gets a new token and retries once.'],
+                  ['invalid_proof', '401', 'The signature doesn’t match: hosts is wrong, or a token is being used without its hardware key.', 'Shows an error.'],
+                  ['stale_proof', '401', 'The proof is more than 2 minutes old. Your server’s clock is wrong; the app corrects its own.', 'Shows an error.'],
+                  ['unavailable', '503', 'Your server couldn’t download BitChord’s public keys the first time.', 'Treats it as a temporary outage.'],
+                ]}
+              />
+              <H3>What you get on success</H3>
+              <SimpleTable
+                code={[0]}
+                headers={['Claim', 'Meaning']}
+                rows={[
+                  ['sub', 'A random id for this install’s hardware key. It changes when the token refreshes, about hourly. Use it with the IP for rate limiting. It is not a user identity.'],
+                  ['ver', 'BitChord’s version code, for example 37. Use it if you need a minimum app version.'],
+                  ['exp', 'When the token expires, in Unix seconds.'],
+                  ['sl', 'tee or strongbox: where the key is held.'],
+                ]}
+              />
+              <p className={styles.detailNote}>
+                No account, email, device id or IMEI is ever sent. Express puts these on{' '}
+                <InlineCode>req.bitchord</InlineCode>; the other helpers return them as{' '}
+                <InlineCode>result.claims</InlineCode>.
+              </p>
+            </Section>
+
+            <Section id="auth-protocol" eyebrow="Addon auth" title="Protocol reference">
+              <p>
+                For porting the verifier to another language. Protocol version 1. The two reference verifiers are
+                the authoritative implementation; when in doubt, match them.
+              </p>
+              <H3>Request headers</H3>
+              <p>
+                Sent only to addons that declare the flag (or answer with <InlineCode>WWW-Authenticate: BitChord</InlineCode>),
+                and only over HTTPS.
+              </p>
+              <CodeBlock code={authHeadersCode} label="HTTP" />
+              <H3>The token</H3>
+              <p>
+                A compact JWT signed with Ed25519 (<InlineCode>alg: EdDSA</InlineCode>, with a <InlineCode>kid</InlineCode>).
+                The public keys are at <InlineCode>{AUTH_ISSUER}/.well-known/jwks.json</InlineCode>. Cache them for
+                an hour, refetch early when a token names an unknown <InlineCode>kid</InlineCode> (at most every 5
+                minutes), and answer <InlineCode>503 unavailable</InlineCode> if they were never loaded.
+              </p>
+              <CodeBlock code={authTokenCode} />
+              <H3>The proof</H3>
+              <CodeBlock code={authProofCode} label="TEXT" />
+              <H3>Verification order</H3>
+              <ol className={styles.numberList}>
+                <li><span>1</span><div><strong>Both headers present.</strong><p>Otherwise <InlineCode>missing</InlineCode>.</p></div></li>
+                <li><span>2</span><div><strong>Token signature.</strong><p>Three parts, <InlineCode>alg</InlineCode> is EdDSA, the <InlineCode>kid</InlineCode> is a known key, and the Ed25519 signature over <InlineCode>header.payload</InlineCode> verifies. Otherwise <InlineCode>invalid_token</InlineCode>.</p></div></li>
+                <li><span>3</span><div><strong>Claims.</strong><p><InlineCode>iss</InlineCode> is {AUTH_ISSUER}; <InlineCode>aud</InlineCode> contains <InlineCode>bitchord-addons</InlineCode>; <InlineCode>iat</InlineCode> isn’t in the future and <InlineCode>exp</InlineCode> hasn’t passed, each with 60 s of skew (<InlineCode>expired</InlineCode> for the latter); <InlineCode>cnf.jwk</InlineCode> is an EC P-256 key.</p></div></li>
+                <li><span>4</span><div><strong>Proof format and age.</strong><p>Matches <InlineCode>{'^v1\\.(\\d{10,16})\\.([A-Za-z0-9_-]{86})$'}</InlineCode> (else <InlineCode>invalid_proof</InlineCode>), and the time is within ±120 s (else <InlineCode>stale_proof</InlineCode>).</p></div></li>
+                <li><span>5</span><div><strong>Proof signature.</strong><p>Verify the ECDSA signature with the <InlineCode>cnf.jwk</InlineCode> key for each configured host. Accept if any verifies, otherwise <InlineCode>invalid_proof</InlineCode>.</p></div></li>
+              </ol>
+            </Section>
+
+            <Section id="auth-faq" eyebrow="Addon auth" title="Auth FAQ">
+              <div className={styles.faq}>
+                {[
+                  ['Can a fork get past this?', 'No. The proof comes from Android’s secure hardware and names the app’s signing certificate, which only the official BitChord release has. Changing the code, renaming the app or copying headers from a real install doesn’t produce a valid proof.'],
+                  ['Do I need to register my addon or get an API key?', 'No. Any addon can verify BitChord tokens. The manifest flag and the verifier are the whole integration.'],
+                  ['Does BitChord send these headers to every addon?', 'No. Only to addons that declare bitchordAuth or answer with WWW-Authenticate: BitChord, and only over HTTPS. Each proof is tied to one hostname, so an addon can’t replay what it receives to another addon.'],
+                  ['Does this slow my addon down?', 'No. Verification is local and takes well under a millisecond. The only network call is fetching BitChord’s public keys, about once an hour.'],
+                  ['What if BitChord’s auth service is down?', 'Your addon keeps working for every phone that already has a token (they last an hour), because verification is local and the public keys are cached. Phones that need a new token wait and retry; BitChord treats it as a temporary outage, not a refusal.'],
+                  ['My addon shows as out of date in BitChord.', 'Your manifest.json doesn’t declare "bitchordAuth": true, or BitChord found no manifest at the addon URL. Add the flag and protect your routes. Listeners see the change the next time BitChord starts or they open Settings → Sources.'],
+                  ['Every request fails with invalid_proof.', 'hosts doesn’t match the hostname in the addon URL listeners pasted. List every hostname your addon is reached at, without scheme, port or path.'],
+                  ['Requests fail with stale_proof.', 'Your server’s clock is more than 2 minutes off. Turn on NTP time sync.'],
+                  ['Rooted users are complaining.', 'BitChord only accepts phones with a locked bootloader and a verified, unmodified OS, so rooted phones and custom ROMs are refused. You can stay in log-only mode to let them in, but then other clients get in too.'],
+                  ['Can BitChord desktop or web use my addon?', 'Not once you enforce auth. Only the Android app can produce the hardware-backed proof.'],
+                ].map(([title, copy]) => (
+                  <details key={title}>
+                    <summary>{title}<ChevronRight /></summary>
+                    <p>{copy}</p>
+                  </details>
+                ))}
+              </div>
+            </Section>
 
             <Section id="how-it-works" eyebrow="Overview" title="How addons work">
               <p>
@@ -643,6 +1343,7 @@ export function DocsPage() {
                 <li><CheckCircle2 />Sends the listener’s pick from your quality options, or a lossless, high, or low tier.</li>
                 <li><CheckCircle2 />Uses declared codec and transport metadata before guessing from a URL.</li>
                 <li><CheckCircle2 />Caches manifests and searches for 10 minutes, streams for 5 minutes.</li>
+                <li><CheckCircle2 />Attaches a hardware-backed proof to every request, and skips addons that don’t declare <InlineCode>bitchordAuth</InlineCode>. See <a href="#addon-auth">Addon auth</a>.</li>
               </ul>
             </Section>
 
@@ -672,6 +1373,7 @@ export function DocsPage() {
               <CodeBlock code={manifestCode} />
               <FieldTable rows={[
                 ['id', 'Yes', 'Stable, unique addon identifier. An empty id is rejected.'],
+                ['bitchordAuth', 'Yes', 'Must be true. Without it the addon is shown as out of date and not used. See Addon auth.'],
                 ['name', 'Recommended', 'Human-readable name shown in the source list.'],
                 ['version', 'Recommended', 'Displayed with health information.'],
                 ['resources', 'Recommended', 'Include search. Stream may be omitted only when rows carry streamURL.'],
@@ -925,9 +1627,9 @@ export function DocsPage() {
             <Section id="install-test" eyebrow="Ship" title="Install and test">
               <div className={styles.steps}>
                 {[
-                  ['01', 'Publish your server', 'Make the root and all three routes reachable over HTTPS.'],
+                  ['01', 'Publish your server', 'Make the root and all three routes reachable over HTTPS, with addon auth on every route but the manifest.'],
                   ['02', 'Add the URL', 'In BitChord, open Settings → Sources → Add an addon. Paste the root or manifest URL.'],
-                  ['03', 'Run the health check', 'BitChord reads the manifest and verifies the addon is searchable.'],
+                  ['03', 'Run the health check', 'BitChord reads the manifest, checks it declares bitchordAuth, and verifies the addon is searchable.'],
                   ['04', 'Play representative tracks', 'Test direct audio, manifest-based audio, every quality tier, misses, and Dolby.'],
                 ].map(([number, title, copy]) => (
                   <div key={number}>
@@ -938,7 +1640,8 @@ export function DocsPage() {
               </div>
               <div className={styles.commandCard}>
                 <p>Fast contract checks</p>
-                <code>GET /manifest.json</code>
+                <code>GET /manifest.json  →  200, "bitchordAuth": true</code>
+                <code>GET /search?q=test without BitChord  →  401</code>
                 <code>GET /search?q=test&amp;quality=LOSSLESS</code>
                 <code>GET /stream/&lt;encoded-id&gt;?quality=LOSSLESS</code>
               </div>
@@ -947,6 +1650,10 @@ export function DocsPage() {
             <Section id="production" eyebrow="Ship" title="Production checklist">
               <div className={styles.checkGrid}>
                 {[
+                  'bitchordAuth: true in the manifest',
+                  'Every route but manifest.json verified',
+                  'hosts lists every public hostname',
+                  'Signed media URLs, 15–30 minute expiry',
                   'Stable addon and track ids',
                   'HTTPS on every returned URL',
                   'JSON content on all success responses',
@@ -969,6 +1676,8 @@ export function DocsPage() {
             <Section id="troubleshooting" eyebrow="Reference" title="Troubleshooting">
               <div className={styles.faq}>
                 {[
+                  ['“This addon is out of date, so BitChord can’t use it”', 'Your manifest doesn’t declare "bitchordAuth": true, or there’s no manifest at the addon URL. Follow Addon auth → Set it up. Devices pick up the change the next time BitChord starts or Sources is opened.'],
+                  ['“didn’t accept BitChord’s verification (invalid_proof)”', 'The hosts you passed to the verifier don’t match the hostname in the addon URL. List every hostname, without scheme, port or path.'],
                   ['“That URL answered, but not with an addon manifest”', 'Return an object with a non-empty id from /manifest.json, or confirm the pasted URL resolves to your addon root.'],
                   ['The addon is healthy but returns no results', 'Check the q parameter, return a tracks array, and ensure each row has both id and title.'],
                   ['Audio fails on an extensionless URL', 'Declare manifest as hls or dash. For direct audio, provide codec and container.'],
