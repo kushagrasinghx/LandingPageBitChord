@@ -107,7 +107,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${inter.variable} ${jetbrains.variable}`}>
-      <body className="antialiased">
+      {/* Browser extensions stamp attributes on <body> (e.g. __processed_…) before React
+          hydrates. This ignores attribute differences on this one element only; mismatches
+          in the page itself are still reported. */}
+      <body className="antialiased" suppressHydrationWarning>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-black"
