@@ -39,7 +39,7 @@ type NavItem = { id: string; label: string; group: string }
 const AUTH_GROUP = 'Addon auth'
 
 const navigation: NavItem[] = [
-  { id: 'addon-auth', label: 'Why it’s mandatory', group: AUTH_GROUP },
+  { id: 'addon-auth', label: 'Why use it', group: AUTH_GROUP },
   { id: 'auth-setup', label: 'Set it up', group: AUTH_GROUP },
   { id: 'auth-frameworks', label: 'Framework recipes', group: AUTH_GROUP },
   { id: 'auth-media', label: 'Short-lived media URLs', group: AUTH_GROUP },
@@ -118,7 +118,7 @@ const streamCode = `GET /stream/track_8f31?quality=lossless&atmos=auto
 
 const serverCode = `import { createBitChordAuth } from "./bitchord-addon-auth.mjs"
 
-// Required: only the official BitChord app gets past this. See Addon auth.
+// Recommended: only the official BitChord app gets past this. See Addon auth.
 const bitchord = createBitChordAuth({ hosts: ["audio.example"] })
 
 const tracks = [
@@ -483,8 +483,10 @@ const AUTH_MIN_VERSION = '1.9.1'
 const AI_BRIEF_URL = '/addon-auth/bitchord-addon-auth-for-ai.md'
 const JS_VERIFIER_URL = '/addon-auth/bitchord-addon-auth.mjs'
 const PY_VERIFIER_URL = '/addon-auth/bitchord_addon_auth.py'
+/** The app's own words: the "Outdated addon" line in Sources, and what tapping it says. */
+const OUTDATED_LABEL = 'Outdated addon'
 const OUTDATED_MESSAGE =
-  'This addon is out of date, so BitChord can’t use it. Ask its developer to update it by following the latest BitChord addon docs.'
+  'This addon is out of date. It still works, but ask its developer to update it by following the latest BitChord addon docs.'
 
 const authManifestCode = `{
   "id": "com.example.myaddon",
@@ -902,7 +904,7 @@ export function DocsPage() {
               <div className={`${styles.navGroup} ${group === AUTH_GROUP ? styles.navGroupNew : ''}`} key={group}>
                 <p>
                   {group}
-                  {group === AUTH_GROUP && <span className={styles.navNewPill}>Required</span>}
+                  {group === AUTH_GROUP && <span className={styles.navNewPill}>New</span>}
                 </p>
                 {navigation.filter((item) => item.group === group).map((item) => (
                   <a
@@ -928,16 +930,17 @@ export function DocsPage() {
         <main id="main-content" className={styles.main}>
           <article className={styles.article}>
             <section id="introduction" className={styles.intro} aria-labelledby="introduction-title">
-              <aside className={styles.authNotice} aria-label="Addon auth is required">
+              <aside className={styles.authNotice} aria-label="New: addon auth">
                 <p className={styles.authNoticeLabel}>
-                  <span className={`${styles.badge} ${styles.badgeRequired}`}>Required</span>
-                  New in BitChord {AUTH_MIN_VERSION}
+                  <span className={`${styles.badge} ${styles.badgeRequired}`}>New</span>
+                  BitChord {AUTH_MIN_VERSION} · optional, recommended
                 </p>
-                <p className={styles.authNoticeTitle}>Addons must now verify that requests come from BitChord</p>
+                <p className={styles.authNoticeTitle}>Lock your addon to the official BitChord app</p>
                 <p className={styles.authNoticeBody}>
-                  BitChord only uses addons that declare <InlineCode>"bitchordAuth": true</InlineCode> and check
-                  every request. Other addons are shown to listeners as out of date and can’t be streamed until
-                  they’re updated. The change takes about 15 minutes.
+                  Other apps and forks can call your addon today. Declare <InlineCode>"bitchordAuth": true</InlineCode>{' '}
+                  and check each request, and only the official BitChord app gets through. It’s optional: addons that
+                  don’t adopt it keep working in BitChord, with a small “{OUTDATED_LABEL}” note in Sources. The change
+                  takes about 15 minutes.
                 </p>
                 <div className={styles.authNoticeLinks}>
                   <a href="#addon-auth">
@@ -964,7 +967,7 @@ export function DocsPage() {
                 {[
                   ['#quickstart', 'Quickstart', 'Expose three routes from any HTTPS server.'],
                   ['#manifest', 'Manifest', 'Declare your addon, its resources and switches.'],
-                  ['#addon-auth', 'Addon auth', 'Required: answer only the official BitChord app.'],
+                  ['#addon-auth', 'Addon auth', 'New: answer only the official BitChord app.'],
                 ].map(([href, title, copy]) => (
                   <a key={href} href={href} className={styles.linkCard}>
                     <span className={styles.linkCardTitle}>
@@ -984,23 +987,25 @@ export function DocsPage() {
 
             {/* ------------------------- addon auth (new) ------------------------- */}
 
-            <Section id="addon-auth" eyebrow="Addon auth · New · Required" title="Addon auth is now mandatory">
+            <Section id="addon-auth" eyebrow="Addon auth · New" title="Lock your addon to BitChord">
               <p>
-                From BitChord {AUTH_MIN_VERSION}, every addon must prove it only answers the official BitChord
-                Android app. The app attaches a hardware-backed proof to each request, and your server checks it.
-                Forks of BitChord, other music apps, scripts, <InlineCode>curl</InlineCode> and browsers get{' '}
-                <InlineCode>401</InlineCode>.
+                From BitChord {AUTH_MIN_VERSION}, your addon can require proof that a request comes from the official
+                BitChord Android app. The app attaches a hardware-backed proof to each request, and your server checks
+                it. Forks of BitChord, other music apps, scripts, <InlineCode>curl</InlineCode> and browsers get{' '}
+                <InlineCode>401</InlineCode>. It’s optional, and recommended for any addon you don’t want used
+                outside BitChord.
               </p>
-              <H3>What happens to addons that don’t update</H3>
+              <H3>What happens to addons that don’t adopt it</H3>
               <p>
-                BitChord reads your manifest. If it doesn’t declare <InlineCode>"bitchordAuth": true</InlineCode>,
-                or there is no manifest at all, the addon is out of date. BitChord then doesn’t search, stream or
-                download from it, and the addon’s row in Settings → Sources tells the listener, in red:
+                Nothing breaks. BitChord keeps searching, streaming and downloading from them exactly as before,
+                without sending any credentials. If your manifest doesn’t declare{' '}
+                <InlineCode>"bitchordAuth": true</InlineCode>, or there is no manifest at all, the addon’s row in
+                Settings → Sources shows a small <strong>{OUTDATED_LABEL}</strong> line. Tapping it tells the listener:
               </p>
               <blockquote className={styles.appQuote}>{OUTDATED_MESSAGE}</blockquote>
               <p>
-                Once you publish the updated manifest, devices pick it up the next time BitChord starts or the
-                listener opens Settings → Sources. Nobody has to re-add the addon.
+                Once you publish the updated manifest, the note goes away the next time BitChord reads it, within
+                about 10 minutes of the listener using the addon. Nobody has to re-add the addon.
               </p>
               <H3>Why a User-Agent or client-name check isn’t enough</H3>
               <p>
@@ -1049,7 +1054,7 @@ export function DocsPage() {
             </Section>
 
             <Section id="auth-setup" eyebrow="Addon auth" title="Set it up">
-              <p>Do all five steps. The first three make your addon usable again; the last two make it safe.</p>
+              <p>Five steps. Step 1 clears the “{OUTDATED_LABEL}” note; steps 2–4 are what keep other apps out, and step 5 protects your audio files.</p>
               <AuthDownloads />
               <div className={styles.steps}>
                 <div>
@@ -1138,7 +1143,7 @@ export function DocsPage() {
                 </div>
               </div>
               <Callout title="Adding the flag without verifying" tone="warn">
-                The flag on its own makes BitChord use your addon again, but it protects nothing: every fork and
+                The flag on its own clears the “{OUTDATED_LABEL}” note, but it protects nothing: every fork and
                 script still gets in. Ship steps 2–4 with it, even if you start in{' '}
                 <a href="#auth-rollout">log-only mode</a>.
               </Callout>
@@ -1204,7 +1209,7 @@ export function DocsPage() {
               <H3>Check it in BitChord</H3>
               <p>
                 Add the addon in the official BitChord app (Settings → Sources → Add an addon) and play a track.
-                The row must not say the addon is out of date, and search and playback must work. If BitChord is
+                The row must not show “{OUTDATED_LABEL}”, and search and playback must work. If BitChord is
                 refused, its logs show <InlineCode>didn’t accept BitChord’s verification (&lt;code&gt;)</InlineCode>{' '}
                 with one of the <a href="#auth-errors">error codes</a>.
               </p>
@@ -1309,7 +1314,7 @@ export function DocsPage() {
                   ['Does BitChord send these headers to every addon?', 'No. Only to addons that declare bitchordAuth or answer with WWW-Authenticate: BitChord, and only over HTTPS. Each proof is tied to one hostname, so an addon can’t replay what it receives to another addon.'],
                   ['Does this slow my addon down?', 'No. Verification is local and takes well under a millisecond. The only network call is fetching BitChord’s public keys, about once an hour.'],
                   ['What if BitChord’s auth service is down?', 'Your addon keeps working for every phone that already has a token (they last an hour), because verification is local and the public keys are cached. Phones that need a new token wait and retry; BitChord treats it as a temporary outage, not a refusal.'],
-                  ['My addon shows as out of date in BitChord.', 'Your manifest.json doesn’t declare "bitchordAuth": true, or BitChord found no manifest at the addon URL. Add the flag and protect your routes. Listeners see the change the next time BitChord starts or they open Settings → Sources.'],
+                  ['My addon shows “Outdated addon” in BitChord.', 'Your manifest.json doesn’t declare "bitchordAuth": true, or BitChord found no manifest at the addon URL. The addon still works; the note only tells listeners it hasn’t adopted addon auth. Add the flag and protect your routes, and the note goes away the next time BitChord reads your manifest.'],
                   ['Every request fails with invalid_proof.', 'hosts doesn’t match the hostname in the addon URL listeners pasted. List every hostname your addon is reached at, without scheme, port or path.'],
                   ['Requests fail with stale_proof.', 'Your server’s clock is more than 2 minutes off. Turn on NTP time sync.'],
                   ['Rooted users are complaining.', 'BitChord only accepts phones with a locked bootloader and a verified, unmodified OS, so rooted phones and custom ROMs are refused. You can stay in log-only mode to let them in, but then other clients get in too.'],
@@ -1349,7 +1354,7 @@ export function DocsPage() {
                 <li><CheckCircle2 />Sends the listener’s pick from your quality options, or a lossless, high, or low tier.</li>
                 <li><CheckCircle2 />Uses declared codec and transport metadata before guessing from a URL.</li>
                 <li><CheckCircle2 />Caches manifests and searches for 10 minutes, streams for 5 minutes.</li>
-                <li><CheckCircle2 />Attaches a hardware-backed proof to every request, and skips addons that don’t declare <InlineCode>bitchordAuth</InlineCode>. See <a href="#addon-auth">Addon auth</a>.</li>
+                <li><CheckCircle2 />Attaches a hardware-backed proof to every request for addons that declare <InlineCode>bitchordAuth</InlineCode>, and marks the rest as outdated without blocking them. See <a href="#addon-auth">Addon auth</a>.</li>
               </ul>
             </Section>
 
@@ -1379,7 +1384,7 @@ export function DocsPage() {
               <CodeBlock code={manifestCode} />
               <FieldTable rows={[
                 ['id', 'Yes', 'Stable, unique addon identifier. An empty id is rejected.'],
-                ['bitchordAuth', 'Yes', 'Must be true. Without it the addon is shown as out of date and not used. See Addon auth.'],
+                ['bitchordAuth', 'Recommended', 'Set true to accept only the official BitChord app (see Addon auth). Without it the addon still works, and Sources marks it as outdated.'],
                 ['name', 'Recommended', 'Human-readable name shown in the source list.'],
                 ['version', 'Recommended', 'Displayed with health information.'],
                 ['resources', 'Recommended', 'Include search. Stream may be omitted only when rows carry streamURL.'],
@@ -1633,9 +1638,9 @@ export function DocsPage() {
             <Section id="install-test" eyebrow="Ship" title="Install and test">
               <div className={styles.steps}>
                 {[
-                  ['01', 'Publish your server', 'Make the root and all three routes reachable over HTTPS, with addon auth on every route but the manifest.'],
+                  ['01', 'Publish your server', 'Make the root and all three routes reachable over HTTPS. With addon auth, check every route but the manifest.'],
                   ['02', 'Add the URL', 'In BitChord, open Settings → Sources → Add an addon. Paste the root or manifest URL.'],
-                  ['03', 'Run the health check', 'BitChord reads the manifest, checks it declares bitchordAuth, and verifies the addon is searchable.'],
+                  ['03', 'Run the health check', 'BitChord reads the manifest, notes whether it declares bitchordAuth, and verifies the addon is searchable.'],
                   ['04', 'Play representative tracks', 'Test direct audio, manifest-based audio, every quality tier, misses, and Dolby.'],
                 ].map(([number, title, copy]) => (
                   <div key={number}>
@@ -1682,7 +1687,7 @@ export function DocsPage() {
             <Section id="troubleshooting" eyebrow="Reference" title="Troubleshooting">
               <div className={styles.faq}>
                 {[
-                  ['“This addon is out of date, so BitChord can’t use it”', 'Your manifest doesn’t declare "bitchordAuth": true, or there’s no manifest at the addon URL. Follow Addon auth → Set it up. Devices pick up the change the next time BitChord starts or Sources is opened.'],
+                  ['“Outdated addon” under your addon in Sources', 'Your manifest doesn’t declare "bitchordAuth": true, or there’s no manifest at the addon URL. The addon still works. To clear it, follow Addon auth → Set it up; devices pick up the change the next time they read your manifest.'],
                   ['“didn’t accept BitChord’s verification (invalid_proof)”', 'The hosts you passed to the verifier don’t match the hostname in the addon URL. List every hostname, without scheme, port or path.'],
                   ['“That URL answered, but not with an addon manifest”', 'Return an object with a non-empty id from /manifest.json, or confirm the pasted URL resolves to your addon root.'],
                   ['The addon is healthy but returns no results', 'Check the q parameter, return a tracks array, and ensure each row has both id and title.'],

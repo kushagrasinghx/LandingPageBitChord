@@ -11,17 +11,17 @@ Source: https://bitchord.kushagrasingh.in/docs#addon-auth (protocol version 1)
 
 ---
 
-## 1. Why this is required
+## 1. Why do this
 
-- From BitChord 1.9.1, the app only uses addons whose `manifest.json`
-  declares `"bitchordAuth": true`. Any other addon (including one with no
-  manifest) shows on the user's Sources screen as **"This addon is out of date,
-  so BitChord can't use it. Ask its developer to update it by following the
-  latest BitChord addon docs."** BitChord doesn't search, stream or download
-  from it until it's updated.
-- The flag alone makes the addon usable again, but it doesn't protect it. The
-  point of addon auth is that the server **verifies** every request, so forks of
-  BitChord, other apps, scripts, `curl` and browsers get `401`.
+- Addon auth is **optional and recommended**. From BitChord 1.9.1, an
+  addon can require proof that each request comes from the official BitChord
+  app, and refuse forks, other apps, scripts, `curl` and browsers with `401`.
+- An addon that doesn't adopt it keeps working in BitChord exactly as before.
+  The user's Sources screen just marks it with a small **"Outdated addon"**
+  line; tapping it says **"This addon is out of date. It still works, but ask
+  its developer to update it by following the latest BitChord addon docs."**
+- The manifest flag alone clears that note but protects nothing. The point of
+  addon auth is that the server **verifies** every request.
 - BitChord is open source, so a User-Agent, client name or API key can be copied
   into a fork. What a fork can't copy is BitChord's release signing key. The
   phone's secure hardware proves (via Google-signed Android key attestation)
@@ -62,7 +62,7 @@ Do all of these.
 ```
 
 - `true`, `1`, `"true"` and `"1"` are all accepted. `false` or a missing key
-  means the addon is out of date.
+  means BitChord marks the addon as outdated (it still works).
 - **`/manifest.json` must stay public** (no auth check). BitChord reads it
   without credentials to learn that it needs to authenticate. If the addon
   serves the manifest under a path prefix (e.g. `/<token>/manifest.json`), the
@@ -347,7 +347,7 @@ curl -si -H 'X-BitChord-Token: x.y.z' -H 'X-BitChord-Proof: v1.0.x' \
 ```
 
 Then the human adds the addon in the official BitChord app (Settings →
-Sources → Add an addon) and plays a track. The row must not say "out of date",
+Sources → Add an addon) and plays a track. The row must not show "Outdated addon",
 and search and playback must work. In the app's logs a refusal shows as
 `didn't accept BitChord's verification (<code>)`.
 
