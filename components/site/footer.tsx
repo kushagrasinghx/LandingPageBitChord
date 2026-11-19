@@ -26,6 +26,8 @@ export function Footer({ stars }: { stars: number | null }) {
     { label: 'Ko-fi', href: 'https://ko-fi.com/kushagrasinghx', external: true },
     { label: 'PayPal', href: 'https://paypal.me/kuxhagrasingh', external: true },
     { label: 'GPL-3.0', href: `${REPO_URL}/blob/main/LICENSE`, external: true },
+    { label: 'Privacy', href: '/privacy' },
+    { label: 'Terms', href: '/terms' },
   ]
 
   return (
