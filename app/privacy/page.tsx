@@ -51,7 +51,7 @@ export default function PrivacyPage() {
         <p>
           BitChord is <strong>not affiliated with, endorsed by, sponsored by or connected to</strong>{' '}
           YouTube, YouTube Music, Google, Spotify, Discord, Apple, Last.fm, Libre.fm,
-          ListenBrainz, Musixmatch, Genius, LRCLIB, KuGou, TIDAL, JioSaavn or any other service
+          ListenBrainz, Musixmatch, Genius, LRCLIB, KuGou, JioSaavn or any other service
           the app can connect to. Their names and marks belong to their owners and are used only
           to say what the app works with. Each of those services has its own privacy policy,
           which applies to whatever you send it through BitChord.
@@ -188,8 +188,9 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Artwork and animated covers (Canvas):</strong> the artist and song name may be
-            looked up on Apple Music / iTunes, TIDAL and a community Canvas list to find artist
-            photos and animated artwork. Spotify Canvas is used only if you connect Spotify.
+            looked up on Apple Music / iTunes, other music catalogues and a community Canvas list
+            to find artist photos and animated artwork. Spotify Canvas is used only if you connect
+            Spotify.
           </li>
           <li>
             <strong>Replay genres:</strong> artist names (and nothing else) are looked up on

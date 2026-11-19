@@ -47,7 +47,7 @@ export default function TermsPage() {
         <p>
           BitChord is <strong>not affiliated with, endorsed by, sponsored by or connected to</strong>{' '}
           YouTube, YouTube Music, Google, Spotify, Discord, Apple, Last.fm, Libre.fm,
-          ListenBrainz, Musixmatch, Genius, LRCLIB, KuGou, TIDAL, JioSaavn, or any other company
+          ListenBrainz, Musixmatch, Genius, LRCLIB, KuGou, JioSaavn, or any other company
           or service the app integrates with or mentions. All product names, logos and brands
           are the property of their owners and are used only to identify the services BitChord
           works with. Use of them does not imply endorsement.

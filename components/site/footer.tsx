@@ -26,8 +26,8 @@ export function Footer({ stars }: { stars: number | null }) {
     { label: 'Ko-fi', href: 'https://ko-fi.com/kushagrasinghx', external: true },
     { label: 'PayPal', href: 'https://paypal.me/kuxhagrasingh', external: true },
     { label: 'GPL-3.0', href: `${REPO_URL}/blob/main/LICENSE`, external: true },
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
   ]
 
   return (
@@ -60,7 +60,15 @@ export function Footer({ stars }: { stars: number | null }) {
         <div className="mt-6 max-w-[760px] space-y-2 text-[12px] leading-[18px] text-white/40">
           <p>
             BitChord is not affiliated with, endorsed by, or connected to YouTube or Google in any
-            way. Use it at your own discretion.
+            way. Use it at your own discretion. See the{' '}
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-white">
+              Privacy Policy
+            </Link>{' '}
+            and{' '}
+            <Link href="/terms" className="underline underline-offset-4 hover:text-white">
+              Terms of Service
+            </Link>
+            .
           </p>
           <p>
             The album artwork, titles and artist names shown on this site are taken from publicly
